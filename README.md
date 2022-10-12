@@ -10,6 +10,7 @@ I try to create a lib to redistribute randomly (or not) some rewards with the ma
 In this first implementation, rewards and participants are set manually. The winners (accounts receiving the rewards) are randomly selected.
 
 Structure of the lib:
+<pre>
  |-- traits/
  |   |-- participant_management.rs
  |   |-- rafle.rs    
@@ -29,5 +30,6 @@ Structure of the lib:
  |   |-- manual_participant_management.rs
  |   |-- native_psp22_reward.rs   
  |   |-- game.rs
+ </pre>
  
  First contract: contract/contract_1
