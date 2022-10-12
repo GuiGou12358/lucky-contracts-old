@@ -8,3 +8,26 @@ I try to create a lib to redistribute randomly (or not) some rewards with the ma
   - the accounts receiving the rewards can be randomly selected or set by another smartcontract (the winner of a game, ...)
   
 In this first implementation, rewards and participants are set manually. The winners (accounts receiving the rewards) are randomly selected.
+
+Structure of the lib:
+ |-- traits/
+ |   |-- participant_management.rs
+ |   |-- rafle.rs    
+ |   |-- game.rs
+ |   |-- reward/
+ |       |-- reward.rs
+ |       |-- psp22_reward.rs
+ |-- impls/
+ |   |-- manual_participant_management.rs
+ |   |-- rafle.rs    
+ |   |-- game.rs
+ |   |-- reward/
+ |       |-- psp2/
+ |           |-- psp22_reward.rs
+ |           |-- native_psp22_reward.rs
+ |-- tests/
+ |   |-- manual_participant_management.rs
+ |   |-- native_psp22_reward.rs   
+ |   |-- game.rs
+ 
+ First contract: contract/contract_1
