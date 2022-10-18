@@ -15,7 +15,7 @@ pub struct Data {
 
 impl<T: Storage<Data>> ParticipantManagement for T {
 
-    default fn _add_participant(&mut self, era: u128, participant: AccountId, value: Balance) {
+    default fn add_participant(&mut self, era: u128, participant: AccountId, value: Balance) {
         self.data().participants.push((participant, era, value)); // TODO test if is already there
     }
 

@@ -3,15 +3,14 @@ use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
 #[openbrush::trait_definition]
-pub trait Rafle {
+pub trait Raffle {
 
-    /// Run the rafle and return the list of winners
+    /// set the max number of winners selected by rafle
+    /// This max number is set for all era
+    fn _set_max_winners_by_raffle(&mut self, max_number: u8);
+
+    /// Run the raffle and return the list of winners
     fn _run(&mut self, era: u128, participants: Vec<(AccountId, Balance)>) -> Vec<AccountId>;
-
-}
-
-#[openbrush::trait_definition]
-pub trait RandomGenerator {
 
     /// generate a random number between min and max values.
     /// The subject can be used to further randomize the number.

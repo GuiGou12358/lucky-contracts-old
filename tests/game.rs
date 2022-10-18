@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
+mod manual_participant_management;
+
 use ink_lang as ink;
 
 #[cfg(test)]
@@ -11,11 +13,12 @@ pub mod game {
 
     use loto::impls::{
         *,
-        reward::psp22::*,
-        reward::psp22::psp22_reward::*,
-        manual_participant_management::*,
         game::*,
+        manual_participant_management::*,
+        reward::psp22::*,
     };
+    use loto::impls::reward::psp22_reward;
+    use loto::impls::reward::psp22_reward::*;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
@@ -23,7 +26,7 @@ pub mod game {
         #[storage_field]
         participants_manager: manual_participant_management::Data,
         #[storage_field]
-        rafle: rafle::Data,
+        rafle: raffle::Data,
         #[storage_field]
         game: game::Data,
         #[storage_field]
@@ -36,7 +39,7 @@ pub mod game {
         pub fn default() -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut Self| {
                 instance.participants_manager = manual_participant_management::Data::default();
-                instance.rafle = rafle::Data::default();
+                instance.rafle = raffle::Data::default();
                 instance.game = game::Data::default();
                 instance.reward = psp22_reward::Data::default();
             })
@@ -59,12 +62,12 @@ pub mod game {
         pub fn test(contract: &mut super::Contract, era: u128){
             let accounts = accounts();
             contract._set_total_rewards(era, 110);
-            contract._add_participant(era, accounts.alice, 100000);
-            contract._add_participant(era, accounts.bob, 100000);
-            contract._add_participant(era, accounts.charlie, 100000);
-            contract._add_participant(era, accounts.django, 100000);
-            contract._add_participant(era, accounts.eve, 100000);
-            contract._add_participant(era, accounts.frank, 100000);
+            contract.add_participant(era, accounts.alice, 100000);
+            contract.add_participant(era, accounts.bob, 100000);
+            contract.add_participant(era, accounts.charlie, 100000);
+            contract.add_participant(era, accounts.django, 100000);
+            contract.add_participant(era, accounts.eve, 100000);
+            contract.add_participant(era, accounts.frank, 100000);
             contract._play(era);
 
             debug_println!("winner era {} : {:?} ", era, contract._list_pending_rewards_from(Some(era), None));

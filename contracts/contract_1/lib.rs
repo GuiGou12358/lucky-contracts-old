@@ -14,13 +14,15 @@ pub mod contract_1 {
         *,
         game::*,
         manual_participant_management::*,
-        rafle::*,
-        reward::psp22::*,
-        reward::psp22::psp22_reward::*,
+        raffle::*,
+        reward::psp22_reward,
+        reward::psp22_reward::*,
     };
 
     /// constants for managing access
-    const MANAGER: RoleType = ink_lang::selector_id!("MANAGER");
+    const PARTICIPANT_MANAGER: RoleType = ink_lang::selector_id!("PARTICIPANT_MANAGER");
+    const REWARD_MANAGER: RoleType = ink_lang::selector_id!("REWARD_MANAGER");
+    const CONTRACT_MANAGER: RoleType = ink_lang::selector_id!("CONTRACT_MANAGER");
     const VIEWER: RoleType = ink_lang::selector_id!("VIEWER");
 
     /// Event emitted when a user claim rewards
@@ -72,17 +74,16 @@ pub mod contract_1 {
         #[storage_field]
         reward: psp22_reward::Data,
         #[storage_field]
-        rafle: rafle::Data,
+        rafle: raffle::Data,
         #[storage_field]
         game: game::Data,
         #[storage_field]
         access: access_control::Data,
     }
 
-    /// implementations of the contractss
+    /// implementations of the contracts
     impl ParticipantManagement for Contract {}
-    impl Reward for Contract {}
-    impl Rafle for Contract {}
+    impl Raffle for Contract {}
     impl Game for Contract {}
     impl Psp22Reward for Contract {}
     //impl native_psp22_reward::Internal for Contract {}
@@ -97,7 +98,9 @@ pub mod contract_1 {
                 let caller = instance.env().caller();
                 //instance._init_with_owner(caller);
                 instance._init_with_admin(caller);
-                instance.grant_role(MANAGER, caller).expect("Should grant the role MANAGER");
+                instance.grant_role(PARTICIPANT_MANAGER, caller).expect("Should grant the role PARTICIPANT_MANAGER");
+                instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
+                instance.grant_role(CONTRACT_MANAGER, caller).expect("Should grant the role CONTRACT_MANAGER");
                 instance.grant_role(VIEWER, caller).expect("Should grant the role VIEWER");
 
             })
@@ -113,34 +116,27 @@ pub mod contract_1 {
             })
         }
 */
-
+/*
         #[ink(message)]
         #[modifiers(only_role(MANAGER))]
         pub fn add_participant(&mut self, era: u128, participant: AccountId, value: Balance) -> Result<(), ContractError> {
             self._add_participant(era, participant, value);
             Ok(())
         }
+        */
 
         #[ink(message)]
-        #[modifiers(only_role(MANAGER))]
-        pub fn set_ratio_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), ContractError> {
-            let nb_winners_by_rafle = ratio.len();
+        #[modifiers(only_role(CONTRACT_MANAGER))]
+        pub fn set_config_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), ContractError> {
+            let max_winners_by_raffle = ratio.len();
             self._set_ratio_distribution(ratio);
-            self.rafle.set_nb_winners_by_rafle(nb_winners_by_rafle as u8);
-            Ok(())
-        }
-
-        /// Set the total rewards shared by all wiiners for a given era
-        #[ink(message)]
-        #[modifiers(only_role(MANAGER))]
-        pub fn set_total_rewards(&mut self, era: u128, amount: Balance) -> Result<(), ContractError> {
-            self._set_total_rewards(era, amount);
+            self._set_max_winners_by_raffle(max_winners_by_raffle as u8);
             Ok(())
         }
 
         #[ink(message)]
-        #[modifiers(only_role(MANAGER))]
-        pub fn run_rafle(&mut self, era: u128) -> Result<(), ContractError> {
+        #[modifiers(only_role(CONTRACT_MANAGER))]
+        pub fn run_raffle(&mut self, era: u128) -> Result<(), ContractError> {
             let pending_reward = self._play(era)?;
 
             self.env().emit_event( RafleDone{
@@ -152,7 +148,7 @@ pub mod contract_1 {
 
             Ok(())
         }
-
+/*
         #[ink(message)]
         pub fn claim(&mut self) {
             let from = self.env().caller();
@@ -165,21 +161,9 @@ pub mod contract_1 {
         #[ink(message)]
         pub fn has_pending_rewards(&self, era: Option<u128>) -> bool {
             let from = self.env().caller();
-            self._has_pending_rewards_from(era, Some(from))
+            self.has_pending_rewards_from(era, Some(from))
         }
-
-        #[ink(message)]
-        // TODO manage access (easier to remove it for testing)
-        //#[modifiers(only_role(VIEWER))]
-        pub fn list_pending_rewards_from(&self, era: Option<u128>, account: Option<AccountId>)
-                                         //-> Result<Vec<(AccountId, u128, Balance)>, AccessControlError>
-            -> Vec<(AccountId, u128, Balance)>
-        {
-            let rewards = self._list_pending_rewards_from(era, account);
-            rewards
-            //Ok(rewards)
-        }
-
+*/
     }
 
 }

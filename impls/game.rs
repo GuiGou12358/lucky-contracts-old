@@ -2,8 +2,8 @@ use openbrush::traits::Storage;
 
 pub use crate::traits::game::Game;
 use crate::traits::participant_management::ParticipantManagement;
-use crate::traits::rafle::Rafle;
-use crate::traits::reward::reward::{PendindReward, Reward, RewardError};
+use crate::traits::raffle::Raffle;
+use crate::traits::reward::psp22_reward::{PendingReward, Psp22Reward, RewardError};
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
 
@@ -13,9 +13,9 @@ pub struct Data {
     _reserved: Option<()>,
 }
 
-impl<T: Storage<Data> + ParticipantManagement + Rafle + Reward> Game for T {
+impl<T: Storage<Data> + ParticipantManagement + Raffle + Psp22Reward> Game for T {
 
-    default fn _play(&mut self, era: u128) -> Result<PendindReward, RewardError> {
+    default fn _play(&mut self, era: u128) -> Result<PendingReward, RewardError> {
         let participants = self._list_participants(era);
         let winners = self._run(era, participants);
         self._add_winners(era, &winners)

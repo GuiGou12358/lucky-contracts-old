@@ -7,11 +7,10 @@ use ink_lang as ink;
 #[ink::contract]
 pub mod native_psp22_reward {
     use ink_storage::traits::SpreadAllocate;
-    use loto::impls::{
-        reward::psp22::*,
-        reward::psp22::psp22_reward::*,
-    };
+    use loto::impls::reward::psp22::*;
     use openbrush::traits::Storage;
+    use loto::impls::reward::psp22_reward;
+    use loto::impls::reward::psp22_reward::*;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
