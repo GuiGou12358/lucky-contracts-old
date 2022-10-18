@@ -7,8 +7,8 @@ use ink_lang as ink;
 #[ink::contract]
 pub mod native_psp22_reward {
     use ink_storage::traits::SpreadAllocate;
-    use loto::impls::reward::psp22::*;
     use openbrush::traits::Storage;
+
     use loto::impls::reward::psp22_reward;
     use loto::impls::reward::psp22_reward::*;
 
@@ -56,8 +56,8 @@ pub mod native_psp22_reward {
             contract._add_winners(era, &vec![account_1]);
 
             // no  reward => no winner
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), false);
-            assert_eq!(contract._list_pending_rewards_from(None, None).len(), 0);
+            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(false));
+            assert_eq!(contract.list_pending_rewards_from(None, None).len(), 0);
         }
 
         #[ink::test]
@@ -69,13 +69,13 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract._set_total_rewards(era, 1000);
+            contract.set_total_rewards(era, 1000);
             // add the winner but no ratio has been set
             contract._add_winners(era, &vec![account_1]);
 
             // no  reward => no winner
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), false);
-            assert_eq!(contract._list_pending_rewards_from(None, None).len(), 0);
+            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(false));
+            assert_eq!(contract.list_pending_rewards_from(None, None).len(), 0);
         }
 
         #[ink::test]
@@ -91,7 +91,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract._set_total_rewards(era, 1000);
+            contract.set_total_rewards(era, 1000);
 
             // first rafle, dispatch all rewards
             contract._add_winners(era, &vec![account_1]);
@@ -99,13 +99,13 @@ pub mod native_psp22_reward {
             // second rafle for this era; no reward because all is already dispatched
             contract._add_winners(era, &vec![account_2]);
 
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), true);
-            assert_eq!(contract._has_pending_rewards_from(Some(2), Some(account_1)), false);
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_2)), false);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
-            assert_eq!(contract._list_pending_rewards_from(Some(2), Some(account_1)).len(), 0);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_2)).len(), 0);
+            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(true));
+            assert_eq!(contract._has_pending_rewards_from(Some(2), Some(account_1)), Ok(false));
+            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_2)), Ok(false));
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
+            assert_eq!(contract.list_pending_rewards_from(Some(2), Some(account_1)).len(), 0);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_2)).len(), 0);
 
         }
 
@@ -124,23 +124,26 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract._set_total_rewards(era, 1000);
+            contract.set_total_rewards(era, 1000);
 
             // first rafle, dispatch all rewards
             contract._add_winners(era, &vec![account_1]);
 
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
 
             // bob claiming don't change erwards for alice
             contract._claim_from(account_2);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
 
             // alice claim => alice doesn't have anymore rewards
             contract._claim_from(account_1);
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), false);
-            assert_eq!(contract._list_pending_rewards_from(Some(era), Some(account_1)).len(), 0);
+            match contract._has_pending_rewards_from(Some(era), Some(account_1)){
+                Ok(x) => assert_eq!(x, false),
+                _ => assert!(false), // ERROR
+            }
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 0);
 
         }
 

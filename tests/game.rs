@@ -1,8 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
-mod manual_participant_management;
-
 use ink_lang as ink;
 
 #[cfg(test)]
@@ -15,10 +13,10 @@ pub mod game {
         *,
         game::*,
         manual_participant_management::*,
-        reward::psp22::*,
+        reward::*,
+        reward::psp22_reward::*,
     };
-    use loto::impls::reward::psp22_reward;
-    use loto::impls::reward::psp22_reward::*;
+    use loto::traits::raffle::Raffle;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
@@ -32,6 +30,8 @@ pub mod game {
         #[storage_field]
         reward: psp22_reward::Data,
     }
+
+    impl Raffle for Contract{}
 
 
     impl Contract {
@@ -61,7 +61,7 @@ pub mod game {
 
         pub fn test(contract: &mut super::Contract, era: u128){
             let accounts = accounts();
-            contract._set_total_rewards(era, 110);
+            contract.set_total_rewards(era, 110);
             contract.add_participant(era, accounts.alice, 100000);
             contract.add_participant(era, accounts.bob, 100000);
             contract.add_participant(era, accounts.charlie, 100000);
@@ -70,7 +70,7 @@ pub mod game {
             contract.add_participant(era, accounts.frank, 100000);
             contract._play(era);
 
-            debug_println!("winner era {} : {:?} ", era, contract._list_pending_rewards_from(Some(era), None));
+            debug_println!("winner era {} : {:?} ", era, contract.list_pending_rewards_from(Some(era), None));
         }
 
 
@@ -78,7 +78,7 @@ pub mod game {
         fn test_multi_users() {
             let mut contract = super::Contract::default();
 
-            contract.rafle.set_nb_winners_by_rafle(3);
+            contract._set_max_winners_by_raffle(3);
             contract._set_ratio_distribution(vec![50, 30, 20]);
 
             for i in 0..10 {

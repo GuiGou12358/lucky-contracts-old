@@ -55,17 +55,17 @@ pub mod manual_participant_management {
             contract.add_participant(1, account_2, 200);
             contract.add_participant(2, account_3, 300);
 
-            assert_eq!(contract.list_participants(1).len(), 2);
-            assert_eq!(contract.list_participants(1)[0].0, account_1);
-            assert_eq!(contract.list_participants(1)[0].1, 100);
-            assert_eq!(contract.list_participants(1)[1].0, account_2);
-            assert_eq!(contract.list_participants(1)[1].1, 200);
+            assert_eq!(contract._list_participants(1).len(), 2);
+            assert_eq!(contract._list_participants(1)[0].0, account_1);
+            assert_eq!(contract._list_participants(1)[0].1, 100);
+            assert_eq!(contract._list_participants(1)[1].0, account_2);
+            assert_eq!(contract._list_participants(1)[1].1, 200);
 
-            assert_eq!(contract.list_participants(2).len(), 1);
-            assert_eq!(contract.list_participants(2)[0].0, account_3);
-            assert_eq!(contract.list_participants(2)[0].1, 300);
+            assert_eq!(contract._list_participants(2).len(), 1);
+            assert_eq!(contract._list_participants(2)[0].0, account_3);
+            assert_eq!(contract._list_participants(2)[0].1, 300);
 
-            assert_eq!(contract.list_participants(3).len(), 0);
+            assert_eq!(contract._list_participants(3).len(), 0);
         }
 
     }

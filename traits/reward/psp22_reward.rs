@@ -3,6 +3,9 @@ use openbrush::modifiers;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
+#[openbrush::wrapper]
+pub type Psp22RewardRef = dyn Psp22Reward;
+
 #[openbrush::trait_definition]
 pub trait Psp22Reward {
 
@@ -31,10 +34,14 @@ pub trait Psp22Reward {
     #[ink(message)]
     fn has_pending_rewards(&mut self) -> Result<bool, RewardError> ;
 
+    fn _has_pending_rewards_from(&mut self, era: Option<u128>, from: Option<AccountId> ) -> Result<bool, RewardError> ;
+
     /// claim all pending rewards
     /// After claiming, there is not anymore pending rewards for this account
     #[ink(message)]
     fn claim(&mut self) -> Result<Balance, RewardError> ;
+
+    fn _claim_from(&mut self, from: AccountId) -> Result<Balance, RewardError> ;
 
 }
 

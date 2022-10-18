@@ -96,27 +96,35 @@ impl<T: Storage<Data>> Psp22Reward for T {
         Ok(PendingReward {era, given_reward, nb_winners})
     }
 
-
     default fn has_pending_rewards(&mut self) -> Result<bool, RewardError> {
-        let account = Self::env().caller();
-        for (a, _, _) in &self.data().pending_rewards {
-            //let era_match = era.unwrap_or(*e) == *e;
-            //let account_match = account.unwrap_or(*a) == *a;
-            if account == *a {
+        let from = Self::env().caller();
+        self._has_pending_rewards_from(None, Some(from))
+    }
+
+    default fn _has_pending_rewards_from(&mut self, era: Option<u128>, from: Option<AccountId>) -> Result<bool, RewardError> {
+        for (a, e, _) in &self.data().pending_rewards {
+            let era_match = era.unwrap_or(*e) == *e;
+            let account_match = from.unwrap_or(*a) == *a;
+            if era_match && account_match {
                 return Ok(true);
             }
         }
         Ok(false)
     }
 
-    default fn claim(&mut self) -> Result<Balance, RewardError>  {
-        let account = Self::env().caller();
+
+    default fn claim(&mut self) -> Result<Balance, RewardError> {
+        let from = Self::env().caller();
+        self._claim_from(from)
+    }
+
+    default fn _claim_from(&mut self, from: AccountId) -> Result<Balance, RewardError>  {
         // get all pending rewards for this account
         let mut pending_rewards = Balance::default();
         let mut index_to_remove = Vec::new();
         let mut index = 0;
         for (a, _, b) in &self.data().pending_rewards {
-            if account == *a {
+            if from == *a {
                 // aggregate the rewards
                 pending_rewards = pending_rewards.checked_add(*b).ok_or(AddOverFlow)?;
                 // remove this index
@@ -125,7 +133,7 @@ impl<T: Storage<Data>> Psp22Reward for T {
             index += 1;
         }
         // transfer the amount
-        if Self::env().transfer(account, pending_rewards).is_err(){
+        if Self::env().transfer(from, pending_rewards).is_err(){
             return Err(TransferError);
         }
         //self._transfer_to(account, pending_rewards)?;
