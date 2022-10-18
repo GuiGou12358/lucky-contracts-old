@@ -1,3 +1,4 @@
+use ink_env::debug_println;
 use ink_prelude::vec::Vec;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
@@ -7,6 +8,8 @@ use rand_chacha::rand_core::RngCore;
 use rand_chacha::rand_core::SeedableRng;
 
 pub use crate::traits::raffle::Raffle;
+use crate::traits::raffle::RaffleError;
+use crate::traits::raffle::RaffleError::*;
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
 
@@ -48,7 +51,7 @@ impl<T: Storage<Data>> Raffle for T {
         self.data().max_winners_by_raffle = max_number;
     }
 
-    default fn _run(&mut self, _era: u128, participants: Vec<(AccountId, Balance)>) -> Vec<AccountId> {
+    default fn _run(&mut self, _era: u128, participants: Vec<(AccountId, Balance)>) -> Result<Vec<AccountId>, RaffleError>  {
         // initialize the empty list of lucky accounts
         let max_winners = self.data().max_winners_by_raffle as usize;
         let mut winners = Vec::with_capacity(max_winners);
@@ -63,7 +66,10 @@ impl<T: Storage<Data>> Raffle for T {
             let mut unsuccessful_choice = 0;
             loop {
                 // generate the random number
-                let random_weight = self._get_random_number(0, total_weight, account);
+                let random_weight = self._get_random_number(0, total_weight, account)?;
+
+                debug_println!("era: {} - random_weight: {} - total_weight: {}", _era, random_weight, total_weight);
+
                 // select the lucky account
                 let winner =  Data::_select_winners(&participants, random_weight);
                 if winner.is_some(){
@@ -102,17 +108,29 @@ impl<T: Storage<Data>> Raffle for T {
                 }
             }
         }
-        winners
+        Ok(winners)
     }
 
 
-    default fn _get_random_number(&self, min: u128, max: u128, account: AccountId) -> u128 {
+    default fn _get_random_number(&self, min: u128, max: u128, account: AccountId) -> Result<u128, RaffleError> {
         let random_seed = Self::env().random(account.as_ref());
         let mut seed_converted: [u8; 32] = Default::default();
         seed_converted.copy_from_slice(random_seed.0.as_ref());
         let mut rng = ChaChaRng::from_seed(seed_converted);
-        let a = rng.next_u64();
-        (a  as u128) / (u128::MAX) * (max - min) + min
+
+        debug_println!("random_seed: {:?} - seed_converted: {:?}", random_seed, seed_converted);
+
+        //(a  as u128) / (u128::MAX) * (max - min) + min
+        let a = rng.next_u64() as u128;
+        let b = a.checked_div(u128::MAX).ok_or(DivByZero)?;
+        let c = max.checked_sub(min).ok_or(SubOverFlow)?;
+        let d = b.checked_mul(c).ok_or(MulOverFlow)?;
+        let e = d.checked_add(min).ok_or(AddOverFlow)?;
+
+        debug_println!("a/MAX: {}", a/(u128::MAX));
+        debug_println!("a: {} - b: {} - c: {} - d: {} - e: {}", a, b, c, d, e);
+        Ok(e)
+
     }
 
 }

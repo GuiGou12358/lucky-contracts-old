@@ -36,6 +36,12 @@ pub mod native_psp22_reward {
         pub fn test(&self){}
     }
 
+    impl psp22_reward::Internal for Contract {
+        fn _emit_reward_claimed_event(&self, _account: AccountId, _amount: Balance){
+            // no event for the tests
+        }
+    }
+
     mod tests {
         use ink_lang as ink;
         use openbrush::test_utils::accounts;

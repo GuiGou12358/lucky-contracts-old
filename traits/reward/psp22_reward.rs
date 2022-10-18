@@ -2,6 +2,7 @@ use ink_prelude::vec::Vec;
 use openbrush::modifiers;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
+//use crate::impls::reward::psp22_reward;
 
 #[openbrush::wrapper]
 pub type Psp22RewardRef = dyn Psp22Reward;
@@ -43,6 +44,11 @@ pub trait Psp22Reward {
 
     fn _claim_from(&mut self, from: AccountId) -> Result<Balance, RewardError> ;
 
+}
+
+#[openbrush::trait_definition]
+pub trait Internal {
+    fn _emit_reward_claimed_event(&self, account: AccountId, amount: Balance);
 }
 
 

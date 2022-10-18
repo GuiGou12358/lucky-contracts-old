@@ -1,23 +1,26 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
-use ink_lang as ink;
-
-#[ink::contract]
+#[openbrush::contract]
 pub mod contract_1 {
     use ink_prelude::vec::Vec;
+    use ink_lang::codegen::{
+        EmitEvent,
+        Env,
+    };
     use ink_storage::traits::SpreadAllocate;
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, RoleType};
 
     use loto::impls::{
-        *,
+        game,
         game::*,
-        manual_participant_management::*,
-        raffle::*,
+        manual_participant_management,
+        raffle,
         reward::psp22_reward,
         reward::psp22_reward::*,
     };
+    use loto::impls::raffle::Raffle;
 
     /// constants for managing access
     const PARTICIPANT_MANAGER: RoleType = ink_lang::selector_id!("PARTICIPANT_MANAGER");
@@ -43,7 +46,7 @@ pub mod contract_1 {
         nb_winners: u8,
     }
 
-    /// Errors occuried in the contract
+    /// Errors occurred in the contract
     #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum ContractError {
@@ -82,14 +85,8 @@ pub mod contract_1 {
     }
 
     /// implementations of the contracts
-    impl ParticipantManagement for Contract {}
     impl Raffle for Contract {}
     impl Game for Contract {}
-    impl Psp22Reward for Contract {}
-    //impl native_psp22_reward::Internal for Contract {}
-    //impl Ownable for Contract {}
-    impl AccessControl for Contract {}
-
 
     impl Contract {
         #[ink(constructor)]
@@ -105,17 +102,7 @@ pub mod contract_1 {
 
             })
         }
-/*
-        #[ink(constructor)]
-        pub fn default() -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                instance.participants_manager = manual_participant_management::Data::default();
-                instance.rafle = rafle::Data::default();
-                instance.game = game::Data::default();
-                instance.reward = psp22_reward::Data::default();
-            })
-        }
-*/
+
 /*
         #[ink(message)]
         #[modifiers(only_role(MANAGER))]
@@ -164,6 +151,12 @@ pub mod contract_1 {
             self.has_pending_rewards_from(era, Some(from))
         }
 */
+    }
+
+    impl psp22_reward::Internal for Contract {
+        fn _emit_reward_claimed_event(&self, account: AccountId, amount: Balance){
+            self.env().emit_event(RewardsClaimed { account, amount });
+        }
     }
 
 }

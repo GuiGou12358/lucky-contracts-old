@@ -3,9 +3,7 @@ use openbrush::storage::Mapping;
 use openbrush::traits::{AccountId, Balance, Storage};
 
 pub use crate::traits::reward::psp22_reward::{
-    PendingReward,
-    Psp22Reward,
-    RewardError,
+    *,
     RewardError::*
 };
 
@@ -31,7 +29,11 @@ pub trait Internal {
 }
  */
 
-impl<T: Storage<Data>> Psp22Reward for T {
+impl<T> Psp22Reward for T
+where
+    T: Internal,
+    T: Storage<Data>,
+{
 
     default fn _set_ratio_distribution(&mut self, ratio: Vec<Balance>){
         self.data().ratio_distribution = ratio;
@@ -141,6 +143,12 @@ impl<T: Storage<Data>> Psp22Reward for T {
         for i in index_to_remove.iter().rev() {
             self.data().pending_rewards.remove(*i);
         }
+
+        // emit the events
+        if pending_rewards > 0 {
+            self._emit_reward_claimed_event(from, pending_rewards);
+        }
+
         Ok(pending_rewards)
     }
 

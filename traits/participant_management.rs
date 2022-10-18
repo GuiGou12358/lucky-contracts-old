@@ -3,6 +3,9 @@ use openbrush::modifiers;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
+#[openbrush::wrapper]
+pub type ParticipantManagementRef = dyn ParticipantManagement;
+
 #[openbrush::trait_definition]
 pub trait ParticipantManagement {
 

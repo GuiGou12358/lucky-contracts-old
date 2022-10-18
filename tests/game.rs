@@ -34,6 +34,8 @@ pub mod game {
     impl Raffle for Contract{}
 
 
+
+
     impl Contract {
         #[ink(constructor)]
         pub fn default() -> Self {
@@ -50,6 +52,12 @@ pub mod game {
         pub fn test(&self){
         }
 
+    }
+
+    impl psp22_reward::Internal for Contract {
+        fn _emit_reward_claimed_event(&self, _account: AccountId, _amount: Balance){
+            // no event for the tests
+        }
     }
 
     mod tests {
