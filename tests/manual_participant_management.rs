@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
-use ink_lang as ink;
-
 #[cfg(test)]
-#[ink::contract]
+#[openbrush::contract]
 pub mod manual_participant_management {
     use ink_storage::traits::SpreadAllocate;
+    use openbrush::contracts::access_control::{access_control, AccessControl, Internal};
     use openbrush::traits::Storage;
 
     use loto::impls::{
@@ -19,21 +18,23 @@ pub mod manual_participant_management {
     pub struct Contract {
         #[storage_field]
         participants_manager: manual_participant_management::Data,
+        #[storage_field]
+        access: access_control::Data,
     }
 
-    //impl ParticipantManagement for Contract {}
+    impl ParticipantManagement for Contract {}
 
     impl Contract {
         #[ink(constructor)]
         pub fn default() -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut Self| {
                 instance.participants_manager = manual_participant_management::Data::default();
+                let caller = instance.env().caller();
+                instance._init_with_admin(caller);
+                instance.grant_role(PARTICIPANT_MANAGER, caller).expect("Should grant the role PARTICIPANT_MANAGER");
             })
         }
 
-        // required to satisfy #[ink::contract]
-        #[ink(message)]
-        pub fn test(&self){}
     }
 
     mod tests {
@@ -51,9 +52,9 @@ pub mod manual_participant_management {
             let account_2 = accounts.bob;
             let account_3 = accounts.charlie;
 
-            contract.add_participant(1, account_1, 100);
-            contract.add_participant(1, account_2, 200);
-            contract.add_participant(2, account_3, 300);
+            contract.add_participant(1, account_1, 100).unwrap();
+            contract.add_participant(1, account_2, 200).unwrap();
+            contract.add_participant(2, account_3, 300).unwrap();
 
             assert_eq!(contract._list_participants(1).len(), 2);
             assert_eq!(contract._list_participants(1)[0].0, account_1);

@@ -1,10 +1,12 @@
 use ink_prelude::vec::Vec;
-use openbrush::modifiers;
+use openbrush::contracts::access_control::AccessControlError;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
+/*
 #[openbrush::wrapper]
 pub type ParticipantManagementRef = dyn ParticipantManagement;
+*/
 
 #[openbrush::trait_definition]
 pub trait ParticipantManagement {
@@ -14,10 +16,23 @@ pub trait ParticipantManagement {
     /// weight can represent the number of raffle tickets for this participant.
     /// weight can also represent the amount staked in dAppStaking, ...
     #[ink(message)]
-    #[modifiers(only_role(PARTICIPANT_MANAGER))]
-    fn add_participant(&mut self, era: u128, participant: AccountId, weight: Balance);
+    fn add_participant(&mut self, era: u128, participant: AccountId, weight: Balance) -> Result<(), ParticipantManagementError>;
 
     /// list all participant for a given era
     fn _list_participants(&self, era: u128) -> Vec<(AccountId, Balance)>;
 
+}
+
+
+#[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub enum ParticipantManagementError {
+    AccessControlError(AccessControlError),
+}
+
+/// convertor from AccessControlError to ParticipantManagementError
+impl From<AccessControlError> for ParticipantManagementError {
+    fn from(error: AccessControlError) -> Self {
+        ParticipantManagementError::AccessControlError(error)
+    }
 }

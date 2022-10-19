@@ -22,25 +22,27 @@ pub struct Data {
 impl Data {
 
     /// Return the sum of weight for all participants given in parameters
-    fn _total_weight(participants: &Vec<(AccountId, u128)>) -> u128 {
+    fn _total_weight(participants: &Vec<(AccountId, u128)>) -> Result<u128, RaffleError>  {
         let mut total_weight = 0 ;
         for (_, weight) in participants {
-            total_weight += weight;
+            //total_weight += weight;
+            total_weight = weight.checked_add(total_weight).ok_or(AddOverFlow)?;
         }
-        total_weight
+        Ok(total_weight)
     }
 
     /// Iterate on the participants, sum the weights,
     /// and return the participant if the sum is superior to the given weight
-    fn _select_winners(participants: &Vec<(AccountId, u128)>, random_weight : u128) -> Option<AccountId> {
+    fn _select_winners(participants: &Vec<(AccountId, u128)>, random_weight : u128) -> Result<Option<AccountId>, RaffleError> {
         let mut total_weight = 0;
         for (account, weight) in participants {
-            total_weight += weight;
+            //total_weight += weight;
+            total_weight = weight.checked_add(total_weight).ok_or(AddOverFlow)?;
             if total_weight >= random_weight {
-                return Some(*account);
+                return Ok(Some(*account));
             }
         }
-        None
+        Ok(None)
     }
 }
 
@@ -58,7 +60,7 @@ impl<T: Storage<Data>> Raffle for T {
         if participants.len() > 0 {
             // compute the sum of weight of participants
             // TODO we can cap the weight by participant to avoid a whale wins always
-            let total_weight = Data::_total_weight(&participants);
+            let total_weight = Data::_total_weight(&participants)?;
 
             // use the first account to further randomize
             let mut account = participants[0].0;
@@ -71,7 +73,7 @@ impl<T: Storage<Data>> Raffle for T {
                 debug_println!("era: {} - random_weight: {} - total_weight: {}", _era, random_weight, total_weight);
 
                 // select the lucky account
-                let winner =  Data::_select_winners(&participants, random_weight);
+                let winner =  Data::_select_winners(&participants, random_weight)?;
                 if winner.is_some(){
                     let winner = winner.unwrap();
                     if winners.contains(&winner) {
@@ -118,19 +120,15 @@ impl<T: Storage<Data>> Raffle for T {
         seed_converted.copy_from_slice(random_seed.0.as_ref());
         let mut rng = ChaChaRng::from_seed(seed_converted);
 
-        debug_println!("random_seed: {:?} - seed_converted: {:?}", random_seed, seed_converted);
-
-        //(a  as u128) / (u128::MAX) * (max - min) + min
-        let a = rng.next_u64() as u128;
-        let b = a.checked_div(u128::MAX).ok_or(DivByZero)?;
-        let c = max.checked_sub(min).ok_or(SubOverFlow)?;
-        let d = b.checked_mul(c).ok_or(MulOverFlow)?;
+        //(a  as u32) * (max - min) / (u32::MAX) + min
+        let a = rng.next_u32() as u128;
+        let b = max.checked_sub(min).ok_or(SubOverFlow)?;
+        let c = a.checked_mul(b).ok_or(MulOverFlow)?;
+        let d = c.checked_div(u32::MAX as u128).ok_or(DivByZero)?;
         let e = d.checked_add(min).ok_or(AddOverFlow)?;
-
-        debug_println!("a/MAX: {}", a/(u128::MAX));
         debug_println!("a: {} - b: {} - c: {} - d: {} - e: {}", a, b, c, d, e);
-        Ok(e)
 
+        Ok(e)
     }
 
 }

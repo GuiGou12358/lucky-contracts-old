@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
-use ink_lang as ink;
-
 #[cfg(test)]
-#[ink::contract]
+#[openbrush::contract]
 pub mod native_psp22_reward {
     use ink_storage::traits::SpreadAllocate;
+    use openbrush::contracts::access_control::{access_control, AccessControl, Internal};
     use openbrush::traits::Storage;
 
     use loto::impls::reward::psp22_reward;
@@ -17,23 +16,24 @@ pub mod native_psp22_reward {
     pub struct Contract {
         #[storage_field]
         rewards: psp22_reward::Data,
+        #[storage_field]
+        access: access_control::Data,
     }
 
-    //impl Reward for Contract {}
-    //impl Psp22Reward for Contract {}
-    //impl native_psp22_reward::_Internal for Contract {}
+    impl Psp22Reward for Contract {}
 
     impl Contract {
         #[ink(constructor)]
         pub fn default() -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut Self| {
                 instance.rewards = psp22_reward::Data::default();
+                let caller = instance.env().caller();
+                instance._init_with_admin(caller);
+                instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
+                instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
             })
         }
 
-        // required to satisfy #[ink::contract]
-        #[ink(message)]
-        pub fn test(&self){}
     }
 
     impl psp22_reward::Internal for Contract {
@@ -57,13 +57,13 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // the first winner will will all
-            contract._set_ratio_distribution(vec![1]);
+            contract._set_ratio_distribution(vec![1]).unwrap();
             // add the winner but no rewards has been set for this era
-            contract._add_winners(era, &vec![account_1]);
+            assert!(contract._add_winners(era, &vec![account_1]).is_err()); // expect an error NOREWARD
 
             // no  reward => no winner
             assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(false));
-            assert_eq!(contract.list_pending_rewards_from(None, None).len(), 0);
+            assert_eq!(contract.list_pending_rewards_from(None, None).unwrap().len(), 0);
         }
 
         #[ink::test]
@@ -75,13 +75,15 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.set_total_rewards(era, 1000);
+            contract.set_total_rewards(era, 1000).unwrap();
             // add the winner but no ratio has been set
-            contract._add_winners(era, &vec![account_1]);
+
+
+            assert!(contract._add_winners(era, &vec![account_1]).is_err());
 
             // no  reward => no winner
             assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(false));
-            assert_eq!(contract.list_pending_rewards_from(None, None).len(), 0);
+            assert_eq!(contract.list_pending_rewards_from(None, None).unwrap().len(), 0);
         }
 
         #[ink::test]
@@ -89,7 +91,7 @@ pub mod native_psp22_reward {
             let mut contract = Contract::default();
 
             // the first winner will will all
-            contract._set_ratio_distribution(vec![1]);
+            contract._set_ratio_distribution(vec![1]).unwrap();
 
             let accounts = accounts();
             let account_1 = accounts.alice;
@@ -97,21 +99,21 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.set_total_rewards(era, 1000);
+            contract.set_total_rewards(era, 1000).unwrap();
 
             // first rafle, dispatch all rewards
-            contract._add_winners(era, &vec![account_1]);
+            contract._add_winners(era, &vec![account_1]).unwrap();
 
             // second rafle for this era; no reward because all is already dispatched
-            contract._add_winners(era, &vec![account_2]);
+            assert!(contract._add_winners(era, &vec![account_2]).is_err()); // expect an error
 
             assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(true));
             assert_eq!(contract._has_pending_rewards_from(Some(2), Some(account_1)), Ok(false));
             assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_2)), Ok(false));
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
-            assert_eq!(contract.list_pending_rewards_from(Some(2), Some(account_1)).len(), 0);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_2)).len(), 0);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap()[0].2, 1000);
+            assert_eq!(contract.list_pending_rewards_from(Some(2), Some(account_1)).unwrap().len(), 0);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_2)).unwrap().len(), 0);
 
         }
 
@@ -122,7 +124,7 @@ pub mod native_psp22_reward {
             let mut contract = Contract::default();
 
             // the first winner will will all
-            contract._set_ratio_distribution(vec![1]);
+            contract._set_ratio_distribution(vec![1]).unwrap();
 
             let accounts = accounts();
             let account_1 = accounts.alice;
@@ -130,26 +132,26 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.set_total_rewards(era, 1000);
+            contract.set_total_rewards(era, 1000).unwrap();
 
             // first rafle, dispatch all rewards
-            contract._add_winners(era, &vec![account_1]);
+            contract._add_winners(era, &vec![account_1]).unwrap();
 
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap()[0].2, 1000);
 
             // bob claiming don't change erwards for alice
-            contract._claim_from(account_2);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 1);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1))[0].2, 1000);
+            contract._claim_from(account_2).unwrap();
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap()[0].2, 1000);
 
             // alice claim => alice doesn't have anymore rewards
-            contract._claim_from(account_1);
+            contract._claim_from(account_1).unwrap();
             match contract._has_pending_rewards_from(Some(era), Some(account_1)){
                 Ok(x) => assert_eq!(x, false),
                 _ => assert!(false), // ERROR
             }
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).len(), 0);
+            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 0);
 
         }
 

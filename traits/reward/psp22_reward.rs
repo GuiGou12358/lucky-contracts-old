@@ -1,8 +1,7 @@
 use ink_prelude::vec::Vec;
-use openbrush::modifiers;
+use openbrush::contracts::access_control::AccessControlError;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
-//use crate::impls::reward::psp22_reward;
 
 #[openbrush::wrapper]
 pub type Psp22RewardRef = dyn Psp22Reward;
@@ -14,12 +13,11 @@ pub trait Psp22Reward {
     /// First winner will receive (total_rewards * ratio[0]) / sum(ratio)
     /// Second winner will receive (total_rewards * ratio[1]) / sum(ratio)
     /// if ratio[n] equals to zero or is empty, tne winner n will receive nothing
-    fn _set_ratio_distribution(&mut self, ratio: Vec<Balance>);
+    fn _set_ratio_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), RewardError>;
 
     /// Set the total rewards shared by all winners for a given era
     #[ink(message)]
-    #[modifiers(only_role(REWARD_MANAGER))]
-    fn set_total_rewards(&mut self, era: u128, amount: Balance);
+    fn set_total_rewards(&mut self, era: u128, amount: Balance) -> Result<(), RewardError> ;
     
     /// add the accounts in the list of winners for the given era
     fn _add_winners(&mut self, era: u128, accounts: &Vec<AccountId>) -> Result<PendingReward, RewardError>;
@@ -28,8 +26,7 @@ pub trait Psp22Reward {
     /// If the era is None, the function returns the pending rewards for all era
     /// If the account is None, the function returns the pending rewards for all accounts
     #[ink(message)]
-    #[modifiers(only_role(REWARD_VIEWER))]
-    fn list_pending_rewards_from(&self, era: Option<u128>, account: Option<AccountId>) -> Vec<(AccountId, u128, Balance)>;
+    fn list_pending_rewards_from(&mut self, era: Option<u128>, account: Option<AccountId>) -> Result<Vec<(AccountId, u128, Balance)>, RewardError>;
 
     /// Return true if the the given account has pending rewards
     #[ink(message)]
@@ -67,7 +64,14 @@ pub enum RewardError {
     DivByZero,
     MulOverFlow,
     AddOverFlow,
+    AccessControlError(AccessControlError)
 }
 
+/// convertor from AccessControlError to RewardError
+impl From<AccessControlError> for RewardError {
+    fn from(error: AccessControlError) -> Self {
+        RewardError::AccessControlError(error)
+    }
+}
 
 

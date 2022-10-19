@@ -1,7 +1,7 @@
 use openbrush::traits::Storage;
 
 pub use crate::traits::game::Game;
-use crate::traits::game::GameError;
+pub use crate::traits::game::GameError;
 use crate::traits::participant_management::ParticipantManagement;
 use crate::traits::raffle::Raffle;
 use crate::traits::reward::psp22_reward::{PendingReward, Psp22Reward};
