@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 
 #[openbrush::contract]
-pub mod contract_1 {
+pub mod rafle {
     use ink_lang::codegen::{
         EmitEvent,
         Env,
@@ -12,7 +12,7 @@ pub mod contract_1 {
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, RoleType};
 
-    use loto::impls::{
+    use rafle_lib::impls::{
         game,
         game::*,
         manual_participant_management,

@@ -16,8 +16,8 @@ pub trait Psp22Reward {
     fn _set_ratio_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), RewardError>;
 
     /// Set the total rewards shared by all winners for a given era
-    #[ink(message)]
-    fn set_total_rewards(&mut self, era: u128, amount: Balance) -> Result<(), RewardError> ;
+    #[ink(message, payable)]
+    fn fund_rewards(&mut self, era: u128, amount: Balance) -> Result<(), RewardError> ;
     
     /// add the accounts in the list of winners for the given era
     fn _add_winners(&mut self, era: u128, accounts: &Vec<AccountId>) -> Result<PendingReward, RewardError>;
@@ -60,6 +60,7 @@ pub struct PendingReward {
 pub enum RewardError {
     NoReward,
     NoRatioSet,
+    InsufficientTransferredBalance,
     TransferError,
     DivByZero,
     MulOverFlow,

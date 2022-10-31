@@ -8,7 +8,7 @@ pub mod manual_participant_management {
     use openbrush::contracts::access_control::{access_control, AccessControl, Internal};
     use openbrush::traits::Storage;
 
-    use loto::impls::{
+    use rafle_lib::impls::{
         *,
         manual_participant_management::*,
     };

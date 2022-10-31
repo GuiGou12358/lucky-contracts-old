@@ -8,8 +8,8 @@ pub mod native_psp22_reward {
     use openbrush::contracts::access_control::{access_control, AccessControl, Internal};
     use openbrush::traits::Storage;
 
-    use loto::impls::reward::psp22_reward;
-    use loto::impls::reward::psp22_reward::*;
+    use rafle_lib::impls::reward::psp22_reward;
+    use rafle_lib::impls::reward::psp22_reward::*;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
@@ -75,7 +75,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.set_total_rewards(era, 1000).unwrap();
+            contract.fund_rewards(era, 1000).unwrap();
             // add the winner but no ratio has been set
 
 
@@ -99,7 +99,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.set_total_rewards(era, 1000).unwrap();
+            contract.fund_rewards(era, 1000).unwrap();
 
             // first rafle, dispatch all rewards
             contract._add_winners(era, &vec![account_1]).unwrap();
@@ -132,7 +132,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.set_total_rewards(era, 1000).unwrap();
+            contract.fund_rewards(era, 1000).unwrap();
 
             // first rafle, dispatch all rewards
             contract._add_winners(era, &vec![account_1]).unwrap();

@@ -42,7 +42,15 @@ where
     }
 
     #[openbrush::modifiers(access_control::only_role(REWARD_MANAGER))]
-    default fn set_total_rewards(&mut self, era: u128, amount: Balance) -> Result<(), RewardError> {
+    default fn fund_rewards(&mut self, era: u128, amount: Balance) -> Result<(), RewardError> {
+
+        let transferred_value = Self::env().transferred_value();
+        let caller = Self::env().caller();
+        ink_env::debug_println!("Thanks for the funding of {:?} from {:?}", transferred_value, caller);
+
+        if transferred_value < amount {
+            return Err(InsufficientTransferredBalance);
+        }
         self.data::<Data>().remaining_rewards.insert(&era, &amount);
         Ok(())
     }

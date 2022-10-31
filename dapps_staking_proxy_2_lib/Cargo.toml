@@ -1,5 +1,5 @@
 [package]
-name = "contract_1"
+name = "dapps_staking_proxy_2_lib"
 version = "0.1.0"
 authors = ["guigou"]
 edition = "2021"
@@ -13,14 +13,12 @@ ink_lang = { version = "3.3", default-features = false }
 ink_prelude = { version = "3.3", default-features = false}
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-openbrush = { version = "2.2.0", default-features = false, features = ["access_control"] }
-rand_chacha = { version = "0.3.1", default-features = false}
-loto = { path = "../..", default-features = false }
+#frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 
 [lib]
-name = "contract_1"
+name = "dapps_staking_proxy_2_lib"
 path = "lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["rlib"]
 
 [features]
 default = ["std"]
@@ -34,8 +32,6 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "openbrush/std",
-    "loto/std",
 ]
 ink-as-dependency = []
 

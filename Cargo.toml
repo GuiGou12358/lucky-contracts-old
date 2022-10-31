@@ -1,41 +1,10 @@
-[package]
-name = "loto"
-version = "0.1.0"
-authors = ["guigou"]
-edition = "2021"
+[workspace]
+members = [
+     "rafle_lib",
+     "contracts/rafle",
 
-[dependencies]
-ink_primitives = { version = "3.3", default-features = false }
-ink_metadata = { version = "3.3", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3.3", default-features = false }
-ink_storage = { version = "3.3", default-features = false }
-ink_lang = { version = "3.3", default-features = false }
-ink_prelude = { version = "3.3", default-features = false }
+#     "contracts/dapps_staking_proxy_1",
 
-scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-rand_chacha = { version = "0.3.1", default-features = false}
-
-openbrush = { version = "2.2.0", default-features = false, features = ["access_control"]}
-pallet-assets-chain-extension = { git = "https://github.com/Supercolony-net/pallet-assets-chain-extension", default-features = false, features = ["ink"]  }
-
-[lib]
-name = "loto"
-path = "lib.rs"
-crate-type = ["rlib"]
-
-[features]
-default = ["std"]
-std = [
-    "ink_primitives/std",
-    "ink_metadata",
-    "ink_metadata/std",
-    "ink_env/std",
-    "ink_storage/std",
-    "ink_lang/std",
-    "scale/std",
-    "scale-info",
-    "scale-info/std",
-    "openbrush/std",
+#    "dapps_staking_proxy_2_lib",
+#    "contracts/dapps_staking_proxy_2"
 ]
-ink-as-dependency = []

@@ -8,14 +8,14 @@ pub mod game {
     use openbrush::contracts::access_control::{*, access_control, AccessControl};
     use openbrush::traits::Storage;
 
-    use loto::impls::{
+    use rafle_lib::impls::{
         *,
         game::*,
         manual_participant_management::*,
         reward::*,
         reward::psp22_reward::*,
     };
-    use loto::traits::raffle::Raffle;
+    use rafle_lib::traits::raffle::Raffle;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
@@ -69,8 +69,14 @@ pub mod game {
         use super::*;
 
         pub fn test(contract: &mut super::Contract, era: u128){
+
+            //use ink_env::codegen::Env;
+
             let accounts = accounts();
-            contract.set_total_rewards(era, 110).unwrap();
+
+            ink_env::pay_with_call!(contract.fund_rewards(era, 110).unwrap(), 110);
+
+            //contract.fund_rewards(era, 110).unwrap();
             contract.add_participant(era, accounts.alice, 100000).unwrap();
             contract.add_participant(era, accounts.bob, 100000).unwrap();
             contract.add_participant(era, accounts.charlie, 100000).unwrap();
