@@ -17,8 +17,8 @@ pub const REWARD_VIEWER: RoleType = ink_lang::selector_id!("REWARD_VIEWER");
 pub struct Data {
     /// Extension to interact with `pallet-assets`
     //pub pallet_assets: AssetsExtension,
-    pending_rewards: Vec<(AccountId, u128, Balance)>,
-    remaining_rewards: Mapping<u128, Balance>,
+    pending_rewards: Vec<(AccountId, u32, Balance)>,
+    remaining_rewards: Mapping<u32, Balance>,
     ratio_distribution: Vec<Balance>,
     total_ratio_distribution: Balance,
 }
@@ -29,6 +29,20 @@ where
     T: Storage<Data>,
     T: Storage<access_control::Data>,
 {
+
+    #[openbrush::modifiers(access_control::only_role(REWARD_MANAGER))]
+    default fn fund_rewards(&mut self, era: u32) -> Result<(), RewardError> {
+
+        let transferred_value = Self::env().transferred_value();
+        let caller = Self::env().caller();
+        ink_env::debug_println!("Thanks for the funding of {:?} from {:?}", transferred_value, caller);
+
+        if transferred_value > 1000 {
+            return Err(InsufficientTransferredBalance);
+        }
+        self.data::<Data>().remaining_rewards.insert(&era, &transferred_value);
+        Ok(())
+    }
 
     default fn _set_ratio_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), RewardError>{
         self.data::<Data>().ratio_distribution = ratio;
@@ -41,21 +55,7 @@ where
         Ok(())
     }
 
-    #[openbrush::modifiers(access_control::only_role(REWARD_MANAGER))]
-    default fn fund_rewards(&mut self, era: u128, amount: Balance) -> Result<(), RewardError> {
-
-        let transferred_value = Self::env().transferred_value();
-        let caller = Self::env().caller();
-        ink_env::debug_println!("Thanks for the funding of {:?} from {:?}", transferred_value, caller);
-
-        if transferred_value < amount {
-            return Err(InsufficientTransferredBalance);
-        }
-        self.data::<Data>().remaining_rewards.insert(&era, &amount);
-        Ok(())
-    }
-
-    default fn _add_winners(&mut self, era: u128, accounts: &Vec<AccountId>) -> Result<PendingReward, RewardError> {
+    default fn _add_winners(&mut self, era: u32, accounts: &Vec<AccountId>) -> Result<PendingReward, RewardError> {
 
         // get the remaining rewards for this era
         let era_reward = self.data::<Data>().remaining_rewards.get(&era).ok_or(NoReward)?;
@@ -110,7 +110,7 @@ where
         self._has_pending_rewards_from(None, Some(from))
     }
 
-    default fn _has_pending_rewards_from(&mut self, era: Option<u128>, from: Option<AccountId>) -> Result<bool, RewardError> {
+    default fn _has_pending_rewards_from(&mut self, era: Option<u32>, from: Option<AccountId>) -> Result<bool, RewardError> {
         for (a, e, _) in &self.data::<Data>().pending_rewards {
             let era_match = era.unwrap_or(*e) == *e;
             let account_match = from.unwrap_or(*a) == *a;
@@ -161,8 +161,8 @@ where
 
 
     #[openbrush::modifiers(access_control::only_role(REWARD_VIEWER))]
-    default fn list_pending_rewards_from(&mut self, era: Option<u128>, account: Option<AccountId>)
-        -> Result<Vec<(AccountId, u128, Balance)>, RewardError> {
+    default fn list_pending_rewards_from(&mut self, era: Option<u32>, account: Option<AccountId>)
+        -> Result<Vec<(AccountId, u32, Balance)>, RewardError> {
         let mut pending_rewards = Vec::new();
         for (a, e, b) in &self.data::<Data>().pending_rewards {
             let era_match = era.unwrap_or(*e) == *e;

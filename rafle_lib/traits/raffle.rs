@@ -10,7 +10,7 @@ pub trait Raffle {
     fn _set_max_winners_by_raffle(&mut self, max_number: u8);
 
     /// Run the raffle and return the list of winners
-    fn _run(&mut self, era: u128, participants: Vec<(AccountId, Balance)>) -> Result<Vec<AccountId>, RaffleError>;
+    fn _run(&mut self, era: u32, participants: Vec<(AccountId, Balance)>) -> Result<Vec<AccountId>, RaffleError>;
 
     /// generate a random number between min and max values.
     /// The subject can be used to further randomize the number.

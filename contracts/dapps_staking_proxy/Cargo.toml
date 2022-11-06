@@ -1,5 +1,5 @@
 [package]
-name = "dapps_staking_proxy_2_lib"
+name = "dapps_staking_proxy"
 version = "0.1.0"
 authors = ["guigou"]
 edition = "2021"
@@ -13,12 +13,20 @@ ink_lang = { version = "3.3", default-features = false }
 ink_prelude = { version = "3.3", default-features = false}
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-#frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
+
+openbrush = { version = "2.2.0", default-features = false, features = [] }
+
+rafle = { path = "../rafle", default-features = false, features = ["ink-as-dependency"]}
+rafle_lib = { path = "../../rafle_lib", default-features = false }
+
+#dapps_staking_extension = { git = "https://github.com/AstarNetwork/chain-extension-contracts", default-features = false }
+dapps_staking_extension = { git = "https://github.com/GuiGou12358/chain-extension-contracts", default-features = false }
+
 
 [lib]
-name = "dapps_staking_proxy_2_lib"
+name = "dapps_staking_proxy"
 path = "lib.rs"
-crate-type = ["rlib"]
+crate-type = ["cdylib"]
 
 [features]
 default = ["std"]
@@ -32,11 +40,12 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
+    "rafle/std",
+    "rafle_lib/std",
+    "dapps_staking_extension/std"
 ]
 ink-as-dependency = []
 
 [profile.release]
 overflow-checks = false
 
-[profile.dev]
-overflow-checks = false

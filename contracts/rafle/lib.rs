@@ -39,7 +39,7 @@ pub mod rafle {
     pub struct RafleDone {
         #[ink(topic)]
         contract: AccountId,
-        era: u128,
+        era: u32,
         pending_rewards: Balance,
         nb_winners: u8,
     }
@@ -122,7 +122,7 @@ pub mod rafle {
 
         #[ink(message)]
         #[modifiers(only_role(CONTRACT_MANAGER))]
-        pub fn run_raffle(&mut self, era: u128) -> Result<(), ContractError> {
+        pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
             let pending_reward = self._play(era)?;
 
             self.env().emit_event( RafleDone{
@@ -132,6 +132,21 @@ pub mod rafle {
                 pending_rewards: pending_reward.given_reward,
             } );
             Ok(())
+        }
+
+        #[ink(message)]
+        pub fn get_role_participant_manager(&self) -> RoleType {
+            PARTICIPANT_MANAGER
+        }
+
+        #[ink(message)]
+        pub fn get_role_reward_manager(&self) -> RoleType {
+            REWARD_MANAGER
+        }
+
+        #[ink(message)]
+        pub fn get_role_contract_manager(&self) -> RoleType {
+            CONTRACT_MANAGER
         }
 
     }

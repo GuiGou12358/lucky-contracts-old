@@ -16,7 +16,7 @@ pub struct Data {
 
 impl<T: Storage<Data> + ParticipantManagement + Raffle + Psp22Reward> Game for T {
 
-    default fn _play(&mut self, era: u128) -> Result<PendingReward, GameError> {
+    default fn _play(&mut self, era: u32) -> Result<PendingReward, GameError> {
         let participants = self._list_participants(era);
         let winners = self._run(era, participants)?;
         match self._add_winners(era, &winners){

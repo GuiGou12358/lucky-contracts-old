@@ -53,7 +53,7 @@ impl<T: Storage<Data>> Raffle for T {
         self.data().max_winners_by_raffle = max_number;
     }
 
-    default fn _run(&mut self, _era: u128, participants: Vec<(AccountId, Balance)>) -> Result<Vec<AccountId>, RaffleError>  {
+    default fn _run(&mut self, _era: u32, participants: Vec<(AccountId, Balance)>) -> Result<Vec<AccountId>, RaffleError>  {
         // initialize the empty list of lucky accounts
         let max_winners = self.data().max_winners_by_raffle as usize;
         let mut winners = Vec::with_capacity(max_winners);

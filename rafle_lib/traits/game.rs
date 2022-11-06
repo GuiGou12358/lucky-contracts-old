@@ -9,7 +9,7 @@ pub trait Game {
     /// and rewards are dispatched between the winners.
     ///
     /// Return the number of winners and the total of rewards dispatched between them
-    fn _play(&mut self, era: u128) -> Result<PendingReward, GameError> ;
+    fn _play(&mut self, era: u32) -> Result<PendingReward, GameError> ;
 
 }
 

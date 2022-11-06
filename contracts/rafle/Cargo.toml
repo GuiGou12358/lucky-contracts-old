@@ -20,7 +20,7 @@ rafle_lib = { path = "../../rafle_lib", default-features = false }
 [lib]
 name = "rafle"
 path = "lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["std"]

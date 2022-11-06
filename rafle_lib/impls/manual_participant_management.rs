@@ -12,7 +12,7 @@ pub const PARTICIPANT_MANAGER: RoleType = ink_lang::selector_id!("PARTICIPANT_MA
 #[derive(Default, Debug )]
 #[openbrush::upgradeable_storage(STORAGE_KEY)]
 pub struct Data {
-    participants: Vec<(AccountId, u128, Balance)>,
+    participants: Vec<(AccountId, u32, Balance)>,
 }
 
 impl<T> ParticipantManagement for T
@@ -22,12 +22,12 @@ impl<T> ParticipantManagement for T
 {
 
     #[openbrush::modifiers(access_control::only_role(PARTICIPANT_MANAGER))]
-    default fn add_participant(&mut self, era: u128, participant: AccountId, value: Balance) -> Result<(), ParticipantManagementError> {
+    default fn add_participant(&mut self, era: u32, participant: AccountId, value: Balance) -> Result<(), ParticipantManagementError> {
         self.data::<Data>().participants.push((participant, era, value)); // TODO test if is already there
         Ok(())
     }
 
-    default fn _list_participants(&self, era: u128) -> Vec<(AccountId, Balance)> {
+    default fn _list_participants(&self, era: u32) -> Vec<(AccountId, Balance)> {
     	self.data::<Data>().participants.iter()
             .filter(|(_, e, _)| *e == era)
             .map(|(a, _, b)| (*a, *b))
