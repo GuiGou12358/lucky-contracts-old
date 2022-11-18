@@ -37,7 +37,7 @@ where
         let caller = Self::env().caller();
         ink_env::debug_println!("Thanks for the funding of {:?} from {:?}", transferred_value, caller);
 
-        if transferred_value > 1000 {
+        if transferred_value < 1000 {
             return Err(InsufficientTransferredBalance);
         }
         self.data::<Data>().remaining_rewards.insert(&era, &transferred_value);
