@@ -19,8 +19,8 @@ openbrush = { version = "2.2.0", default-features = false, features = [] }
 rafle = { path = "../rafle", default-features = false, features = ["ink-as-dependency"]}
 rafle_lib = { path = "../../rafle_lib", default-features = false }
 
-#dapps_staking_extension = { git = "https://github.com/AstarNetwork/chain-extension-contracts", default-features = false }
-dapps_staking_extension = { git = "https://github.com/GuiGou12358/chain-extension-contracts", default-features = false }
+dapps_staking_extension = { git = "https://github.com/AstarNetwork/chain-extension-contracts", default-features = false }
+#dapps_staking_extension = { git = "https://github.com/GuiGou12358/chain-extension-contracts", default-features = false }
 
 
 [lib]
