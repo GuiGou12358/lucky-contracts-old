@@ -30,14 +30,26 @@ where
     T: Storage<access_control::Data>,
 {
 
-    #[openbrush::modifiers(access_control::only_role(REWARD_MANAGER))]
     default fn fund_rewards(&mut self, era: u32) -> Result<(), RewardError> {
 
         let transferred_value = Self::env().transferred_value();
         let caller = Self::env().caller();
         ink_env::debug_println!("Thanks for the funding of {:?} from {:?}", transferred_value, caller);
 
-        if transferred_value < 1000 {
+        if transferred_value < 1 {
+            return Err(InsufficientTransferredBalance);
+        }
+        self.data::<Data>().remaining_rewards.insert(&era, &transferred_value);
+        Ok(())
+    }
+
+    #[openbrush::modifiers(access_control::only_role(REWARD_MANAGER))]
+    default fn fund_rewards_after_transfer(&mut self, era: u32, transferred_value: Balance) -> Result<(), RewardError> {
+
+        let caller = Self::env().caller();
+        ink_env::debug_println!("Thanks for the funding of {:?} from {:?}", transferred_value, caller);
+
+        if transferred_value < 1 {
             return Err(InsufficientTransferredBalance);
         }
         self.data::<Data>().remaining_rewards.insert(&era, &transferred_value);

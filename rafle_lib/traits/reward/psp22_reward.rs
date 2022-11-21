@@ -18,6 +18,10 @@ pub trait Psp22Reward {
     /// Set the total rewards shared by all winners for a given era
     #[ink(message, payable)]
     fn fund_rewards(&mut self, era: u32) -> Result<(), RewardError> ;
+
+    /// Set the total rewards shared by all winners for a given era
+    #[ink(message)]
+    fn fund_rewards_after_transfer(&mut self, era: u32, value: Balance) -> Result<(), RewardError> ;
     
     /// add the accounts in the list of winners for the given era
     fn _add_winners(&mut self, era: u32, accounts: &Vec<AccountId>) -> Result<PendingReward, RewardError>;
