@@ -10,7 +10,7 @@ pub mod rafle {
     use ink_prelude::vec::Vec;
     use ink_storage::traits::SpreadAllocate;
     use openbrush::{modifiers, traits::Storage};
-    use openbrush::contracts::access_control::{*, AccessControlError, RoleType};
+    use openbrush::contracts::access_control::{*, AccessControlError, RoleType, DEFAULT_ADMIN_ROLE};
 
     use rafle_lib::impls::{
         game,
@@ -51,6 +51,7 @@ pub mod rafle {
         RewardError(RewardError),
         GameError(GameError),
         AccessControlError(AccessControlError),
+        UpgradeError,
     }
 
     /// convertor from RewardError to ContractError
@@ -135,6 +136,13 @@ pub mod rafle {
         }
 
         #[ink(message)]
+        #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
+        pub fn upgrade_contract(&mut self, new_code_hash: [u8; 32]) -> Result<(), ContractError> {
+            ink_env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
+            Ok(())
+        }
+
+        #[ink(message)]
         pub fn get_role_participant_manager(&self) -> RoleType {
             PARTICIPANT_MANAGER
         }
@@ -147,6 +155,11 @@ pub mod rafle {
         #[ink(message)]
         pub fn get_role_contract_manager(&self) -> RoleType {
             CONTRACT_MANAGER
+        }
+
+        #[ink(message)]
+        pub fn get_role_amin(&self) -> RoleType {
+            DEFAULT_ADMIN_ROLE
         }
 
     }

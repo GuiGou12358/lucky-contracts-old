@@ -15,7 +15,7 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 #require to clone it because v2.3 is not released yet
-openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = [] }
+openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["ownable"] }
 
 rafle = { path = "../rafle", default-features = false, features = ["ink-as-dependency"]}
 rafle_lib = { path = "../../rafle_lib", default-features = false }
