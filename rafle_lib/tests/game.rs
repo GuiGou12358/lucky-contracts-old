@@ -68,13 +68,13 @@ pub mod game {
 
         use super::*;
 
-        pub fn test(contract: &mut super::Contract, era: u128){
+        pub fn test(contract: &mut super::Contract, era: u32){
 
             //use ink_env::codegen::Env;
 
             let accounts = accounts();
 
-            ink_env::pay_with_call!(contract.fund_rewards(era, 110).unwrap(), 110);
+            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
 
             //contract.fund_rewards(era, 110).unwrap();
             contract.add_participant(era, accounts.alice, 100000).unwrap();

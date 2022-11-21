@@ -4,7 +4,7 @@
 mod dapps_staking_proxy {
     use dapps_staking_extension::*;
 
-    use rafle_lib::traits::participant_management::{ParticipantManagementError, ParticipantManagementRef};
+    use rafle_lib::traits::participant_management::{ParticipantManagementError, /*ParticipantManagementRef*/};
     use rafle_lib::traits::reward::{psp22_reward, psp22_reward::*};
 
     use crate::dapps_staking_proxy::Error::{SubOverFlow, TransferError};
@@ -24,9 +24,11 @@ mod dapps_staking_proxy {
             let contract = self.env().account_id();
             DappsStaking::bond_and_stake(contract, value)?;
 
+            /*
             let caller = self.env().caller();
             let era = DappsStaking::read_current_era();
             ParticipantManagementRef::add_participant(&mut self.rafle_contract, era, caller, value)?;
+             */
 
             Ok(())
         }
@@ -41,6 +43,10 @@ mod dapps_staking_proxy {
             let reward = balance_before.checked_sub(balance_after).ok_or(SubOverFlow)?;
 
             // transfer the amount
+
+            // use only in test
+            //ink_env::pay_with_call!(Psp22RewardRef::fund_rewards(&mut self.rafle_contract, era), reward);
+
             if self.env().transfer(self.rafle_contract, reward).is_err(){
                 return Err(TransferError);
             }

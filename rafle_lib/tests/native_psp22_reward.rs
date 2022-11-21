@@ -75,7 +75,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.fund_rewards(era, 1000).unwrap();
+            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
             // add the winner but no ratio has been set
 
 
@@ -99,7 +99,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.fund_rewards(era, 1000).unwrap();
+            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
 
             // first rafle, dispatch all rewards
             contract._add_winners(era, &vec![account_1]).unwrap();
@@ -132,7 +132,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // set the rewards for this era
-            contract.fund_rewards(era, 1000).unwrap();
+            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
 
             // first rafle, dispatch all rewards
             contract._add_winners(era, &vec![account_1]).unwrap();
