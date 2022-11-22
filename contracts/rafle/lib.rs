@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 
 #[openbrush::contract]
-pub mod rafle {
+pub mod rafle_contract {
     use ink_lang::codegen::{
         EmitEvent,
         Env,
@@ -12,16 +12,18 @@ pub mod rafle {
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, RoleType, DEFAULT_ADMIN_ROLE};
 
-    use rafle_lib::impls::{
-        game,
-        game::*,
+    use rafle::impls::{
         manual_participant_management,
         manual_participant_management::*,
-        raffle,
-        raffle::*,
         reward::psp22_reward,
         reward::psp22_reward::*,
     };
+
+    use rafle::helpers::{
+        helper,
+        helper::HelperError,
+    };
+
 
     /// constants for managing access
     const CONTRACT_MANAGER: RoleType = ink_lang::selector_id!("CONTRACT_MANAGER");
@@ -49,7 +51,7 @@ pub mod rafle {
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum ContractError {
         RewardError(RewardError),
-        GameError(GameError),
+        HelperError(HelperError),
         AccessControlError(AccessControlError),
         UpgradeError,
     }
@@ -61,10 +63,10 @@ pub mod rafle {
         }
     }
 
-    /// convertor from GameError to ContractError
-    impl From<GameError> for ContractError {
-        fn from(error: GameError) -> Self {
-            ContractError::GameError(error)
+    /// convertor from HelperError to ContractError
+    impl From<HelperError> for ContractError {
+        fn from(error: HelperError) -> Self {
+            ContractError::HelperError(error)
         }
     }
 
@@ -84,16 +86,10 @@ pub mod rafle {
         #[storage_field]
         reward: psp22_reward::Data,
         #[storage_field]
-        rafle: raffle::Data,
-        #[storage_field]
-        game: game::Data,
-        #[storage_field]
         access: access_control::Data,
     }
 
     /// implementations of the contracts
-    impl Raffle for Contract {}
-    impl Game for Contract {}
     impl Psp22Reward for Contract{}
     impl ParticipantManagement for Contract{}
     impl AccessControl for Contract{}
@@ -115,16 +111,17 @@ pub mod rafle {
         #[ink(message)]
         #[modifiers(only_role(CONTRACT_MANAGER))]
         pub fn set_config_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), ContractError> {
-            let max_winners_by_raffle = ratio.len();
             self._set_ratio_distribution(ratio)?;
-            self._set_max_winners_by_raffle(max_winners_by_raffle as u8);
             Ok(())
         }
 
         #[ink(message)]
         #[modifiers(only_role(CONTRACT_MANAGER))]
         pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
-            let pending_reward = self._play(era)?;
+
+            let participants = self._list_participants(era);
+            let winners = helper::select_winners(self, participants, self.reward.ratio_distribution.len())?;
+            let pending_reward = self._add_winners(era, &winners)?;
 
             self.env().emit_event( RafleDone{
                 contract: self.env().caller(),

@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 #[openbrush::contract]
-pub mod game {
+pub mod helper {
     use ink_storage::traits::SpreadAllocate;
     use openbrush::contracts::access_control::{*, access_control, AccessControl};
     use openbrush::traits::Storage;
@@ -15,7 +15,7 @@ pub mod game {
         reward::*,
         reward::psp22_reward::*,
     };
-    use rafle_lib::traits::raffle::Raffle;
+    use rafle_lib::traits::random_generator::RandomGenerator;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
@@ -23,7 +23,7 @@ pub mod game {
         #[storage_field]
         participants_manager: manual_participant_management::Data,
         #[storage_field]
-        rafle: raffle::Data,
+        rafle: random_generator::Data,
         #[storage_field]
         game: game::Data,
         #[storage_field]
@@ -32,8 +32,7 @@ pub mod game {
         access: access_control::Data,
     }
 
-    impl Raffle for Contract {}
-    impl Game for Contract {}
+    impl RandomGenerator for Contract {}
     impl Psp22Reward for Contract{}
     impl ParticipantManagement for Contract{}
 
@@ -42,7 +41,7 @@ pub mod game {
         pub fn default() -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut Self| {
                 instance.participants_manager = manual_participant_management::Data::default();
-                instance.rafle = raffle::Data::default();
+                instance.rafle = random_generator::Data::default();
                 instance.game = game::Data::default();
                 instance.reward = psp22_reward::Data::default();
                 let caller = instance.env().caller();

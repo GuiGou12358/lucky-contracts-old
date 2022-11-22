@@ -7,10 +7,10 @@ mod dapps_staking_proxy {
     use openbrush::contracts::ownable;
     use openbrush::contracts::ownable::*;
     use openbrush::modifiers;
-    use openbrush::traits::{Storage};
+    use openbrush::traits::Storage;
 
-    use rafle_lib::traits::participant_management::{ParticipantManagementError, /*ParticipantManagementRef*/};
-    use rafle_lib::traits::reward::{psp22_reward, psp22_reward::*};
+    use rafle::traits::participant_management::{ParticipantManagementError, /*ParticipantManagementRef*/};
+    use rafle::traits::reward::{psp22_reward, psp22_reward::*};
 
     use crate::dapps_staking_proxy::Error::{SubOverFlow, TransferError, UpgradeError};
 
@@ -58,7 +58,7 @@ mod dapps_staking_proxy {
             let balance_after = self.env().balance();
             let reward = balance_before.checked_sub(balance_after).ok_or(SubOverFlow)?;
 
-            let reward2 = reward.checked_add(2222).ok_or(SubOverFlow)?; // TODO remove it
+            let reward2 = if reward > 0 { reward } else {  reward.checked_add(2222).ok_or(SubOverFlow)? }; // TODO remove it
 
             // transfer the amount
 
@@ -66,8 +66,10 @@ mod dapps_staking_proxy {
             //ink_env::pay_with_call!(Psp22RewardRef::fund_rewards(&mut self.rafle_contract, era), reward);
 
             self.env().transfer(self.rafle_contract, reward2).map_err(|_| TransferError)?;
+            // TODO better to use payable method but how call it!
             //Psp22RewardRef::fund_rewards(&mut self.rafle_contract, era)?;
-            Psp22RewardRef::fund_rewards2(&mut self.rafle_contract, era, reward2)?;
+
+            Psp22RewardRef::fund_rewards_after_transfer(&mut self.rafle_contract, era, reward2)?;
 
             Ok(())
         }
@@ -85,8 +87,6 @@ mod dapps_staking_proxy {
             ink_env::set_code_hash(&new_code_hash).map_err(|_| UpgradeError)?;
             Ok(())
         }
-
-
 
     }
 

@@ -19,7 +19,7 @@ pub struct Data {
     //pub pallet_assets: AssetsExtension,
     pending_rewards: Vec<(AccountId, u32, Balance)>,
     remaining_rewards: Mapping<u32, Balance>,
-    ratio_distribution: Vec<Balance>,
+    pub ratio_distribution: Vec<Balance>,
     total_ratio_distribution: Balance,
 }
 

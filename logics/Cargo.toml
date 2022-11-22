@@ -1,5 +1,5 @@
 [package]
-name = "rafle_lib"
+name = "rafle"
 version = "0.1.0"
 authors = ["guigou"]
 edition = "2021"
@@ -20,7 +20,7 @@ rand_chacha = { version = "0.3.1", default-features = false}
 openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"]}
 
 [lib]
-name = "rafle_lib"
+name = "rafle"
 path = "lib.rs"
 crate-type = ["rlib"]
 

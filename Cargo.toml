@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "rafle_lib",
+    "logics",
     "contracts/rafle",
     "contracts/dapps_staking_proxy",
 ]

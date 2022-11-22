@@ -17,8 +17,8 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 #require to clone it because v2.3 is not released yet
 openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["ownable"] }
 
-rafle = { path = "../rafle", default-features = false, features = ["ink-as-dependency"]}
-rafle_lib = { path = "../../rafle_lib", default-features = false }
+rafle-contract = { path = "../rafle", default-features = false, features = ["ink-as-dependency"]}
+rafle = { path = "../../logics", default-features = false }
 
 #dapps_staking_extension = { git = "https://github.com/AstarNetwork/chain-extension-contracts", default-features = false }
 dapps_staking_extension = { git = "https://github.com/GuiGou12358/chain-extension-contracts", default-features = false }
@@ -41,8 +41,8 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
+    "rafle-contract/std",
     "rafle/std",
-    "rafle_lib/std",
     "dapps_staking_extension/std"
 ]
 ink-as-dependency = []
