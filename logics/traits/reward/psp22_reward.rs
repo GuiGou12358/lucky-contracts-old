@@ -1,7 +1,6 @@
 use ink_prelude::vec::Vec;
 use openbrush::contracts::access_control::AccessControlError;
-use openbrush::traits::{AccountId};
-use openbrush::traits::Balance;
+use openbrush::traits::{AccountId, Balance};
 
 #[openbrush::wrapper]
 pub type Psp22RewardRef = dyn Psp22Reward;
@@ -13,18 +12,24 @@ pub trait Psp22Reward {
     /// First winner will receive (total_rewards * ratio[0]) / sum(ratio)
     /// Second winner will receive (total_rewards * ratio[1]) / sum(ratio)
     /// if ratio[n] equals to zero or is empty, tne winner n will receive nothing
-    fn _set_ratio_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), RewardError>;
+    #[ink(message)]
+    fn set_ratio_distribution(&mut self, ratio: Vec<Balance>) -> Result<(), RewardError>;
 
     /// Set the total rewards shared by all winners for a given era
     #[ink(message, payable)]
     fn fund_rewards(&mut self, era: u32) -> Result<(), RewardError> ;
 
-    /// Set the total rewards shared by all winners for a given era
-    #[ink(message)]
-    fn fund_rewards_after_transfer(&mut self, era: u32, value: Balance) -> Result<(), RewardError> ;
-    
-    /// add the accounts in the list of winners for the given era
+    /// add accounts in the list of winners for a given era and share the remaining rewards among the winners
+    /// in function of the ratio distribution set before
     fn _add_winners(&mut self, era: u32, accounts: &Vec<AccountId>) -> Result<PendingReward, RewardError>;
+
+    /// Set the total rewards shared by all winners for a given era
+    /// And add accounts in the list of winners for a given era
+    /// and share the remaining rewards among the winners in function of the ratio distribution set before
+    ///
+    /// combination of the methods fund_rewards and _add_winners
+    #[ink(message, payable, selector = 0xc218e5ba)]
+    fn fund_rewards_and_add_winners(&mut self, era: u32, accounts: Vec<AccountId>) -> Result<PendingReward, RewardError>;
 
     /// return the pending rewards for a given era and a given account.
     /// If the era is None, the function returns the pending rewards for all era
@@ -49,10 +54,12 @@ pub trait Psp22Reward {
 
 #[openbrush::trait_definition]
 pub trait Internal {
-    fn _emit_reward_claimed_event(&self, account: AccountId, amount: Balance);
+    fn _emit_rewards_claimed_event(&self, account: AccountId, amount: Balance);
+    fn _emit_pending_reward_event(&self, account: AccountId, amount: Balance);
 }
 
-
+#[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct PendingReward {
     pub era: u32,
     pub given_reward: Balance,

@@ -1,5 +1,5 @@
 [package]
-name = "lucky"
+name = "participants_oracle"
 version = "0.1.0"
 authors = ["guigou"]
 edition = "2021"
@@ -10,19 +10,17 @@ ink_metadata = { version = "3.4", default-features = false, features = ["derive"
 ink_env = { version = "3.4", default-features = false }
 ink_storage = { version = "3.4", default-features = false }
 ink_lang = { version = "3.4", default-features = false }
-ink_prelude = { version = "3.4", default-features = false }
-
+ink_prelude = { version = "3.4", default-features = false}
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-rand_chacha = { version = "0.3.1", default-features = false}
-
 #require to clone it because v2.3 is not released yet
-openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"]}
+openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"] }
+lucky = { path = "../../logics", default-features = false }
 
 [lib]
-name = "lucky"
+name = "participants_oracle"
 path = "lib.rs"
-crate-type = ["rlib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["std"]
@@ -37,5 +35,12 @@ std = [
     "scale-info",
     "scale-info/std",
     "openbrush/std",
+    "lucky/std",
 ]
 ink-as-dependency = []
+
+[profile.release]
+overflow-checks = false
+
+[profile.dev]
+overflow-checks = false

@@ -39,7 +39,7 @@ pub fn select_winners(
     participants: Vec<(AccountId, Balance)>,
     nb_winners: usize
 ) -> Result<Vec<AccountId>, HelperError>  {
-    // initialize the empty list of lucky accounts
+    // initialize the empty list of reward_manager accounts
     let mut winners = Vec::with_capacity(nb_winners);
     if participants.len() > 0 {
         // compute the sum of weight of participants
@@ -56,7 +56,7 @@ pub fn select_winners(
 
             debug_println!("random_weight: {} - total_weight: {}", random_weight, total_weight);
 
-            // select the lucky account
+            // select the reward_manager account
             let winner =  select_winner_matching_weight(&participants, random_weight)?;
             if winner.is_some(){
                 let winner = winner.unwrap();
@@ -74,7 +74,7 @@ pub fn select_winners(
                     // change the account to further randomize
                     account = participants[unsuccessful_choice].0;
                 } else {
-                    // a lucky has been selected
+                    // a reward_manager has been selected
                     winners.push(winner);
                     // this account will be used to further randomize
                     account = winner;

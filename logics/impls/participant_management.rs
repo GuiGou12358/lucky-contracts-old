@@ -15,23 +15,27 @@ pub struct Data {
     participants: Vec<(AccountId, u32, Balance)>,
 }
 
-impl<T> ParticipantManagement for T
+impl<T> ParticipantReader for T
     where
         T: Storage<Data>,
-        T: Storage<access_control::Data>,
 {
-
-    #[openbrush::modifiers(access_control::only_role(PARTICIPANT_MANAGER))]
-    default fn add_participant(&mut self, era: u32, participant: AccountId, value: Balance) -> Result<(), ParticipantManagementError> {
-        self.data::<Data>().participants.push((participant, era, value)); // TODO test if is already there
-        Ok(())
-    }
-
-    default fn _list_participants(&self, era: u32) -> Vec<(AccountId, Balance)> {
+    default fn list_participants(&self, era: u32) -> Vec<(AccountId, Balance)> {
     	self.data::<Data>().participants.iter()
             .filter(|(_, e, _)| *e == era)
             .map(|(a, _, b)| (*a, *b))
             .collect()
     }
+}
 
+
+impl<T> ParticipantManager for T
+    where
+        T: Storage<Data>,
+        T: Storage<access_control::Data>,
+{
+    #[openbrush::modifiers(access_control::only_role(PARTICIPANT_MANAGER))]
+    default fn add_participant(&mut self, era: u32, participant: AccountId, value: Balance) -> Result<(), ParticipantManagementError> {
+        self.data::<Data>().participants.push((participant, era, value)); // TODO test if is already there
+        Ok(())
+    }
 }

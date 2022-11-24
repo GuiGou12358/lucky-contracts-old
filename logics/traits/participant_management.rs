@@ -4,10 +4,19 @@ use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
 #[openbrush::wrapper]
-pub type ParticipantManagementRef = dyn ParticipantManagement;
+pub type ParticipantReaderRef = dyn ParticipantReader;
 
 #[openbrush::trait_definition]
-pub trait ParticipantManagement {
+pub trait ParticipantReader {
+
+    #[ink(message)]
+    /// list all participant for a given era
+    fn list_participants(&self, era: u32) -> Vec<(AccountId, Balance)>;
+
+}
+
+#[openbrush::trait_definition]
+pub trait ParticipantManager {
 
     /// add a participant in the raffle for a given era
     /// a participant with a weight higher than another participant will have normally more chance to be selected in the raffle
@@ -15,9 +24,6 @@ pub trait ParticipantManagement {
     /// weight can also represent the amount staked in dAppStaking, ...
     #[ink(message)]
     fn add_participant(&mut self, era: u32, participant: AccountId, weight: Balance) -> Result<(), ParticipantManagementError>;
-
-    /// list all participant for a given era
-    fn _list_participants(&self, era: u32) -> Vec<(AccountId, Balance)>;
 
 }
 

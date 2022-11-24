@@ -101,10 +101,10 @@ pub mod native_psp22_reward {
             // set the rewards for this era
             ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
 
-            // first rafle, dispatch all rewards
+            // first lucky_orchestrator, dispatch all rewards
             contract._add_winners(era, &vec![account_1]).unwrap();
 
-            // second rafle for this era; no reward because all is already dispatched
+            // second lucky_orchestrator for this era; no reward because all is already dispatched
             assert!(contract._add_winners(era, &vec![account_2]).is_err()); // expect an error
 
             assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(true));
@@ -134,7 +134,7 @@ pub mod native_psp22_reward {
             // set the rewards for this era
             ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
 
-            // first rafle, dispatch all rewards
+            // first lucky_orchestrator, dispatch all rewards
             contract._add_winners(era, &vec![account_1]).unwrap();
 
             assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);

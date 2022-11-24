@@ -1,0 +1,56 @@
+[package]
+name = "lucky_orchestrator"
+version = "0.1.0"
+authors = ["guigou"]
+edition = "2021"
+
+[dependencies]
+ink_primitives = { version = "3.4", default-features = false }
+ink_metadata = { version = "3.4", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3.4", default-features = false }
+ink_storage = { version = "3.4", default-features = false }
+ink_lang = { version = "3.4", default-features = false }
+ink_prelude = { version = "3.4", default-features = false}
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+#require to clone it because v2.3 is not released yet
+openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"] }
+rand_chacha = { version = "0.3.1", default-features = false}
+lucky = { path = "../../logics", default-features = false }
+#dapps_staking_extension = { git = "https://github.com/AstarNetwork/chain-extension-contracts", default-features = false }
+dapps_staking_extension = { git = "https://github.com/GuiGou12358/chain-extension-contracts", default-features = false }
+participants_oracle = { path = "../participants_oracle", default-features = false, features = ["ink-as-dependency"] }
+reward_manager = { path = "../reward_manager", default-features = false, features = ["ink-as-dependency"] }
+dapps_staking_developer = { path = "../dapps_staking_developer", default-features = false, features = ["ink-as-dependency"] }
+
+[lib]
+name = "lucky_orchestrator"
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[features]
+default = ["std"]
+std = [
+    "ink_primitives/std",
+    "ink_metadata",
+    "ink_metadata/std",
+    "ink_env/std",
+    "ink_storage/std",
+    "ink_lang/std",
+    "scale/std",
+    "scale-info",
+    "scale-info/std",
+    "openbrush/std",
+    "lucky/std",
+    "dapps_staking_extension/std",
+    "participants_oracle/std",
+    "reward_manager/std",
+    "dapps_staking_developer/std",
+]
+ink-as-dependency = []
+
+[profile.release]
+overflow-checks = false
+
+[profile.dev]
+overflow-checks = false

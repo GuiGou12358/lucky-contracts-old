@@ -1,6 +1,8 @@
 [workspace]
 members = [
     "logics",
-    "contracts/rafle",
-    "contracts/dapps_staking_proxy",
+    "contracts/dapps_staking_developer",
+    "contracts/lucky_orchestrator",
+    "contracts/participants_oracle",
+    "contracts/reward_manager",
 ]
