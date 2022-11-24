@@ -3,13 +3,13 @@
 
 #[cfg(test)]
 #[openbrush::contract]
-pub mod native_psp22_reward {
+pub mod psp22_reward {
     use ink_storage::traits::SpreadAllocate;
     use openbrush::contracts::access_control::{access_control, AccessControl, Internal};
     use openbrush::traits::Storage;
 
-    use rafle_lib::impls::reward::psp22_reward;
-    use rafle_lib::impls::reward::psp22_reward::*;
+    use lucky::impls::reward::psp22_reward;
+    use lucky::impls::reward::psp22_reward::*;
 
     #[ink(storage)]
     #[derive(Default, Storage, SpreadAllocate)]
@@ -37,7 +37,10 @@ pub mod native_psp22_reward {
     }
 
     impl psp22_reward::Internal for Contract {
-        fn _emit_reward_claimed_event(&self, _account: AccountId, _amount: Balance){
+        fn _emit_rewards_claimed_event(&self, _account: AccountId, _amount: Balance){
+            // no event for the tests
+        }
+        fn _emit_pending_reward_event(&self, _account: AccountId, _amount: Balance) {
             // no event for the tests
         }
     }
@@ -57,7 +60,7 @@ pub mod native_psp22_reward {
             let era = 1;
 
             // the first winner will will all
-            contract._set_ratio_distribution(vec![1]).unwrap();
+            contract.set_ratio_distribution(vec![1]).unwrap();
             // add the winner but no rewards has been set for this era
             assert!(contract._add_winners(era, &vec![account_1]).is_err()); // expect an error NOREWARD
 
@@ -91,7 +94,7 @@ pub mod native_psp22_reward {
             let mut contract = Contract::default();
 
             // the first winner will will all
-            contract._set_ratio_distribution(vec![1]).unwrap();
+            contract.set_ratio_distribution(vec![1]).unwrap();
 
             let accounts = accounts();
             let account_1 = accounts.alice;
@@ -124,7 +127,7 @@ pub mod native_psp22_reward {
             let mut contract = Contract::default();
 
             // the first winner will will all
-            contract._set_ratio_distribution(vec![1]).unwrap();
+            contract.set_ratio_distribution(vec![1]).unwrap();
 
             let accounts = accounts();
             let account_1 = accounts.alice;
