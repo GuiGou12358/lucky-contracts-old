@@ -3,19 +3,22 @@
 
 #[openbrush::contract]
 pub mod rafle_contract {
+    use dapps_staking_extension::*;
     use ink_env::call::{Call, ExecutionInput, Selector};
     use ink_prelude::vec::Vec;
     use ink_storage::traits::SpreadAllocate;
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE, RoleType};
-    use dapps_staking_extension::*;
+
     use lucky::helpers::{
         helper,
         helper::HelperError,
     };
     use lucky::impls::reward::psp22_reward::PendingReward;
     use lucky::traits::participant_management::ParticipantReaderRef;
-    use lucky::traits::reward::psp22_reward::Psp22RewardRef;
+
+    //use lucky::traits::reward::psp22_reward::Psp22RewardRef;
+    //use dapps_staking_developer::dapps_staking_developer::ContractRef as DAppsStakingContractRef;
 
     // Selector of withdraw: "0x410fcc9d"
     const WITHDRAW_SELECTOR : [u8; 4] = [0x41, 0x0f, 0xcc, 0x9d];
@@ -112,10 +115,16 @@ pub mod rafle_contract {
             // TODO only for dev
             let reward_developer_2 = if reward_developer > 0 { reward_developer } else { reward_developer.checked_add(2222).ok_or(ContractError::SubOverFlow)? }; // TODO remove it
 
-
             // get the balance before withdrawing
             let balance_before = self.env().balance();
 
+            // I have teh following issue with this piece of code
+            // DAppsStakingContractRef::withdraw(&mut self.dapps_staking_developer_address, reward_developer_2)
+            //  --------------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `dapps_staking_developer::ContractRef`, found struct `ink_env::AccountId`
+            /*
+            DAppsStakingContractRef::withdraw(&mut self.dapps_staking_developer_address, reward_developer_2)
+                .map_err(|_| ContractError::CrossContractCallError1)?;
+             */
             // withdraw the amount from developer dAppsStaking
             ink_env::call::build_call::<Environment>()
                 .call_type(
@@ -142,9 +151,12 @@ pub mod rafle_contract {
             let winners = helper::select_winners(self, participants, 1)?; // TODO get the number of winners
 
             // transfer the reward and the winners
+            // I cannot use the wrapper ref because I need to provide a payable value as well.
+            /*
             let pending_reward = Psp22RewardRef::fund_rewards_and_add_winners(&self.reward_manager_address, era, winners)
                 .map_err(|_| ContractError::CrossContractCallError2)?;
-/*
+            */
+
             let pending_reward : PendingReward = ink_env::call::build_call::<Environment>()
                 .call_type(
                     Call::new()
@@ -159,8 +171,6 @@ pub mod rafle_contract {
                 .returns()
                 .fire()
                 .map_err(|_| ContractError::CrossContractCallError2)?;
-*/
-            //let pending_reward = self._add_winners(era, &winners)?;
 
             self.env().emit_event(RafleDone {
                 contract: self.env().caller(),

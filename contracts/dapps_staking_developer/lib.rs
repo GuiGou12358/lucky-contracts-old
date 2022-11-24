@@ -1,6 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
+/*
+pub use self::dapps_staking_developer::{
+    Contract,
+    ContractRef,
+};
+*/
+
 #[openbrush::contract]
 pub mod dapps_staking_developer {
 
