@@ -46,6 +46,7 @@ pub mod lucky_oracle {
     }
 
     /// implementations of the contracts
+    impl OracleDataConsumer for Contract{}
     impl OracleDataManager for Contract{}
     impl AccessControl for Contract{}
 

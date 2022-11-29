@@ -12,7 +12,7 @@ pub mod rafle_contract {
         raffle,
         raffle::*,
     };
-    use lucky::traits::oracle::OracleDataManagerRef;
+    use lucky::traits::oracle::OracleDataConsumerRef;
 
     // Selector of withdraw: "0x410fcc9d"
     const WITHDRAW_SELECTOR : [u8; 4] = [0x41, 0x0f, 0xcc, 0x9d];
@@ -96,7 +96,7 @@ pub mod rafle_contract {
         pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
 
             // get the oracle data
-            let oracle_data = OracleDataManagerRef::get_data(&mut self.lucky_oracle_address, era);
+            let oracle_data = OracleDataConsumerRef::get_data(&mut self.lucky_oracle_address, era);
 
             let participants = oracle_data.participants;
             let rewards = oracle_data.rewards;

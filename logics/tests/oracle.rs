@@ -22,6 +22,7 @@ pub mod oracle {
         access: access_control::Data,
     }
 
+    impl OracleDataConsumer for Contract {}
     impl OracleDataManager for Contract {}
     impl AccessControl for Contract{}
 

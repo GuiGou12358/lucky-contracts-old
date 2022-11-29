@@ -4,7 +4,7 @@ use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
 #[openbrush::wrapper]
-pub type OracleDataManagerRef = dyn OracleDataManager;
+pub type OracleDataConsumerRef = dyn OracleDataConsumer;
 
 #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -15,13 +15,18 @@ pub struct OracleData {
     pub rewards: Balance,
 }
 
-
 #[openbrush::trait_definition]
-pub trait OracleDataManager {
+pub trait OracleDataConsumer {
 
     /// return the data for a given era
     #[ink(message)]
     fn get_data(&self, era: u32) -> OracleData;
+
+}
+
+#[openbrush::trait_definition]
+pub trait OracleDataManager {
+
     
     /// add a participant in the raffle for a given era
     /// a participant with a weight higher than another participant will have normally more chance to be selected in the raffle

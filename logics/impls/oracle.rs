@@ -17,7 +17,7 @@ pub struct Data {
     rewards: Mapping<u32, Balance>,
 }
 
-impl<T> OracleDataManager for T
+impl<T> OracleDataConsumer for T
     where
         T: Storage<Data>,
         T: Storage<access_control::Data>,
@@ -33,6 +33,13 @@ impl<T> OracleDataManager for T
         OracleData {participants, rewards}
     }
 
+}
+
+impl<T> OracleDataManager for T
+    where
+        T: Storage<Data>,
+        T: Storage<access_control::Data>,
+{
 
     #[openbrush::modifiers(access_control::only_role(ORACLE_DATA_MANAGER))]
     default fn add_participant(&mut self, era: u32, participant: AccountId, value: Balance) -> Result<(), OracleManagementError> {
