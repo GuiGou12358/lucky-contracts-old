@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 
 #[openbrush::contract]
-pub mod participants_oracle {
+pub mod lucky_oracle {
 
     use ink_storage::traits::SpreadAllocate;
     use openbrush::{
@@ -16,8 +16,8 @@ pub mod participants_oracle {
         RoleType
     };
     use lucky::impls::{
-        participant_management,
-        participant_management::*,
+        oracle,
+        oracle::*,
     };
 
     /// Errors occurred in the contract
@@ -40,14 +40,13 @@ pub mod participants_oracle {
     #[derive(Default, Storage, SpreadAllocate)]
     pub struct Contract {
         #[storage_field]
-        participants_manager: participant_management::Data,
+        oracle_data: oracle::Data,
         #[storage_field]
         access: access_control::Data,
     }
 
     /// implementations of the contracts
-    impl ParticipantManager for Contract{}
-    impl ParticipantReader for Contract{}
+    impl OracleDataManager for Contract{}
     impl AccessControl for Contract{}
 
     impl Contract {
@@ -56,7 +55,7 @@ pub mod participants_oracle {
             ink_lang::codegen::initialize_contract(|instance: &mut Self| {
                 let caller = instance.env().caller();
                 instance._init_with_admin(caller);
-                instance.grant_role(PARTICIPANT_MANAGER, caller).expect("Should grant the role PARTICIPANT_MANAGER");
+                instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
 
             })
         }
@@ -69,8 +68,8 @@ pub mod participants_oracle {
         }
 
         #[ink(message)]
-        pub fn get_role_participant_manager(&self) -> RoleType {
-            PARTICIPANT_MANAGER
+        pub fn get_role_oracle_data_manager(&self) -> RoleType {
+            ORACLE_DATA_MANAGER
         }
 
     }

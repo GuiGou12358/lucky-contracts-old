@@ -28,6 +28,7 @@ pub mod reward_manager {
     pub struct PendingReward {
         #[ink(topic)]
         account: AccountId,
+        era: u32,
         amount: Balance,
     }
 
@@ -111,12 +112,13 @@ pub mod reward_manager {
     }
 
     impl psp22_reward::Internal for Contract {
-        fn _emit_rewards_claimed_event(&self, account: AccountId, amount: Balance){
-            self.env().emit_event(RewardsClaimed { account, amount });
+
+        fn _emit_pending_reward_event(&self, account: AccountId, era: u32, amount: Balance){
+            self.env().emit_event(PendingReward { account, era, amount });
         }
 
-        fn _emit_pending_reward_event(&self, account: AccountId, amount: Balance){
-            self.env().emit_event(PendingReward { account, amount });
+        fn _emit_rewards_claimed_event(&self, account: AccountId, amount: Balance){
+            self.env().emit_event(RewardsClaimed { account, amount });
         }
     }
 

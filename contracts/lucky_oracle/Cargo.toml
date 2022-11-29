@@ -1,5 +1,5 @@
 [package]
-name = "participants_oracle"
+name = "lucky_oracle"
 version = "0.1.0"
 authors = ["guigou"]
 edition = "2021"
@@ -18,7 +18,7 @@ openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", defaul
 lucky = { path = "../../logics", default-features = false }
 
 [lib]
-name = "participants_oracle"
+name = "lucky_oracle"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
 

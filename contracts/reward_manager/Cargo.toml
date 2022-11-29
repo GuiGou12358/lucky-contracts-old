@@ -15,7 +15,6 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 #require to clone it because v2.3 is not released yet
 openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"] }
-#rand_chacha = { version = "0.3.1", default-features = false}
 lucky = { path = "../../logics", default-features = false }
 
 [lib]

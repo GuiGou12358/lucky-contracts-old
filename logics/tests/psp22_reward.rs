@@ -5,7 +5,7 @@
 #[openbrush::contract]
 pub mod psp22_reward {
     use ink_storage::traits::SpreadAllocate;
-    use openbrush::contracts::access_control::{access_control, AccessControl, Internal};
+    use openbrush::contracts::access_control::{*, access_control};
     use openbrush::traits::Storage;
 
     use lucky::impls::reward::psp22_reward;
@@ -21,6 +21,7 @@ pub mod psp22_reward {
     }
 
     impl Psp22Reward for Contract {}
+    impl AccessControl for Contract{}
 
     impl Contract {
         #[ink(constructor)]
@@ -40,121 +41,152 @@ pub mod psp22_reward {
         fn _emit_rewards_claimed_event(&self, _account: AccountId, _amount: Balance){
             // no event for the tests
         }
-        fn _emit_pending_reward_event(&self, _account: AccountId, _amount: Balance) {
+        fn _emit_pending_reward_event(&self, _account: AccountId, _era: u32, _amount: Balance) {
             // no event for the tests
         }
     }
 
     mod tests {
         use ink_lang as ink;
+        use ink_env::debug_println;
         use openbrush::test_utils::accounts;
 
         use super::*;
 
+
         #[ink::test]
-        fn test_no_reward_no_winner() {
+        fn test_fund_rewards_and_add_winners_insufficient_transferred_value() {
+
             let mut contract = Contract::default();
 
             let accounts = accounts();
-            let account_1 = accounts.alice;
             let era = 1;
 
-            // the first winner will will all
-            contract.set_ratio_distribution(vec![1]).unwrap();
-            // add the winner but no rewards has been set for this era
-            assert!(contract._add_winners(era, &vec![account_1]).is_err()); // expect an error NOREWARD
-
-            // no  reward => no winner
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(false));
-            assert_eq!(contract.list_pending_rewards_from(None, None).unwrap().len(), 0);
+            // 600 > 100 => error
+            let result = ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+                era, [(accounts.alice, 600)].to_vec()), 100
+            );     
+            
+            match result {
+                Err(InsufficientTransferredBalance) => debug_println!("Insufficient Transferred Balance as expected"), 
+                _ => panic!("Error 1!"),
+            };
+            
+            // 600 > 100 => ok
+            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+                era, [(accounts.alice, 600)].to_vec()), 600
+            ).unwrap();
         }
 
+
         #[ink::test]
-        fn test_no_ratio_distribution_no_winner() {
+        fn test_fund_rewards_and_add_winners() {
+
             let mut contract = Contract::default();
 
             let accounts = accounts();
-            let account_1 = accounts.alice;
-            let era = 1;
 
-            // set the rewards for this era
-            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
-            // add the winner but no ratio has been set
+            // set the rewards for era 1
+            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+                1,
+                [(accounts.alice, 600)].to_vec()
+            ), 1000).unwrap();
+
+            match contract.get_pending_rewards_from(accounts.alice) {
+                Ok(Some(v)) => assert_eq!(v, 600),
+                _ => panic!("Error 1!"),
+            };
+            match contract.get_pending_rewards_from(accounts.bob) {
+                Ok(None) => debug_println!("No Reward as expected"), 
+                _ => panic!("Error 2!"),
+            };
+
+            // set the rewards for era 2
+            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+                2,
+                [(accounts.bob, 400)].to_vec()
+            ), 1000).unwrap();
+
+            match contract.get_pending_rewards_from(accounts.alice) {
+                Ok(Some(v)) => assert_eq!(v, 600),
+                _ => panic!("Rewards for Alice should be 600"),
+            }
+            match contract.get_pending_rewards_from(accounts.bob) {
+                Ok(Some(v)) => assert_eq!(v, 400),
+                _ => panic!("Rewards for Bob should be 400"),
+            }
+
+            // set the rewards for era 3
+            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+                3,
+                [(accounts.alice, 600), (accounts.django, 200)].to_vec()
+            ), 1000).unwrap();
 
 
-            assert!(contract._add_winners(era, &vec![account_1]).is_err());
-
-            // no  reward => no winner
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(false));
-            assert_eq!(contract.list_pending_rewards_from(None, None).unwrap().len(), 0);
+            match contract.get_pending_rewards_from(accounts.alice) {
+                Ok(Some(v)) => assert_eq!(v, 1200), // 600 + 600
+                _ => panic!("Rewards for Alice should be 1200"),
+            }
+            match contract.get_pending_rewards_from(accounts.bob) {
+                Ok(Some(v)) => assert_eq!(v, 400),
+                _ => panic!("Rewards for Bob should be 400"),
+            }
+            match contract.get_pending_rewards_from(accounts.django) {
+                Ok(Some(v)) => assert_eq!(v, 200),
+                _ => panic!("Rewards for Django should be 200"),
+            }
+        
         }
-
-        #[ink::test]
-        fn test_no_reward_after_dispatching_them() {
-            let mut contract = Contract::default();
-
-            // the first winner will will all
-            contract.set_ratio_distribution(vec![1]).unwrap();
-
-            let accounts = accounts();
-            let account_1 = accounts.alice;
-            let account_2 = accounts.bob;
-            let era = 1;
-
-            // set the rewards for this era
-            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
-
-            // first lucky_orchestrator, dispatch all rewards
-            contract._add_winners(era, &vec![account_1]).unwrap();
-
-            // second lucky_orchestrator for this era; no reward because all is already dispatched
-            assert!(contract._add_winners(era, &vec![account_2]).is_err()); // expect an error
-
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_1)), Ok(true));
-            assert_eq!(contract._has_pending_rewards_from(Some(2), Some(account_1)), Ok(false));
-            assert_eq!(contract._has_pending_rewards_from(Some(era), Some(account_2)), Ok(false));
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap()[0].2, 1000);
-            assert_eq!(contract.list_pending_rewards_from(Some(2), Some(account_1)).unwrap().len(), 0);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_2)).unwrap().len(), 0);
-
-        }
-
 
         #[ink::test]
         fn test_no_current_reward_after_claiming() {
 
             let mut contract = Contract::default();
 
-            // the first winner will will all
-            contract.set_ratio_distribution(vec![1]).unwrap();
-
             let accounts = accounts();
-            let account_1 = accounts.alice;
-            let account_2 = accounts.bob;
             let era = 1;
 
             // set the rewards for this era
-            ink_env::pay_with_call!(contract.fund_rewards(era), 1000).unwrap();
+            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+                era,
+                [(accounts.alice, 600), (accounts.bob, 400)].to_vec()
+            ), 1000).unwrap();
 
-            // first lucky_orchestrator, dispatch all rewards
-            contract._add_winners(era, &vec![account_1]).unwrap();
 
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap()[0].2, 1000);
-
-            // bob claiming don't change erwards for alice
-            contract._claim_from(account_2).unwrap();
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 1);
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap()[0].2, 1000);
-
-            // alice claim => alice doesn't have anymore rewards
-            contract._claim_from(account_1).unwrap();
-            match contract._has_pending_rewards_from(Some(era), Some(account_1)){
-                Ok(x) => assert_eq!(x, false),
-                _ => assert!(false), // ERROR
+            match contract.get_pending_rewards_from(accounts.alice) {
+                Ok(Some(v)) => assert_eq!(v, 600),
+                _ => panic!("Rewards for Alice should be 600"),
             }
-            assert_eq!(contract.list_pending_rewards_from(Some(era), Some(account_1)).unwrap().len(), 0);
+
+            match contract.get_pending_rewards_from(accounts.bob) {
+                Ok(Some(v)) => assert_eq!(v, 400),
+                _ => panic!("Rewards for Bob should be 400"),
+            }
+
+            // alice claims => alice doesn't have anymore rewards
+            contract.claim_from(accounts.alice).unwrap();
+            match contract.get_pending_rewards_from(accounts.alice) {
+                Ok(None) => debug_println!("no rewards for Alice"),
+                _ => panic!("Alice should have no rewards"),
+            }
+            // bob still have rewards
+            match contract.get_pending_rewards_from(accounts.bob) {
+                Ok(Some(v)) => assert_eq!(v, 400),
+                _ => panic!("Rewards for Bob should be 400"),
+            }
+            
+            // bob claims => bob doesn't have anymore rewards
+            contract.claim_from(accounts.bob).unwrap();
+            match contract.get_pending_rewards_from(accounts.bob) {
+                Ok(None) => debug_println!("no rewards for bob"),
+                _ => panic!("Bob should have no rewards"),
+            }
+
+            // claims no rewards => Error
+            match contract.claim_from(accounts.bob) {
+                Err(NoReward) => debug_println!("no rewards for bob"),
+                _ => panic!("Error 1"),
+            }
 
         }
 

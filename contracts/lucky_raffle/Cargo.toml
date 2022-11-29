@@ -17,9 +17,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"] }
 rand_chacha = { version = "0.3.1", default-features = false}
 lucky = { path = "../../logics", default-features = false }
-#dapps_staking_extension = { git = "https://github.com/AstarNetwork/chain-extension-contracts", default-features = false }
-dapps_staking_extension = { git = "https://github.com/GuiGou12358/chain-extension-contracts", default-features = false }
-participants_oracle = { path = "../participants_oracle", default-features = false, features = ["ink-as-dependency"] }
+lucky_oracle = { path = "../lucky_oracle", default-features = false, features = ["ink-as-dependency"] }
 reward_manager = { path = "../reward_manager", default-features = false, features = ["ink-as-dependency"] }
 dapps_staking_developer = { path = "../dapps_staking_developer", default-features = false, features = ["ink-as-dependency"] }
 
@@ -42,8 +40,7 @@ std = [
     "scale-info/std",
     "openbrush/std",
     "lucky/std",
-    "dapps_staking_extension/std",
-    "participants_oracle/std",
+    "lucky_oracle/std",
     "reward_manager/std",
     "dapps_staking_developer/std",
 ]
