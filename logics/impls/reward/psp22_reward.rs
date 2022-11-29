@@ -74,11 +74,10 @@ where
 
     default fn claim(&mut self) -> Result<(), RewardError> {
         let from = Self::env().caller();
-        self.claim_from(from)
+        self._claim_from(from)
     }
 
-    #[openbrush::modifiers(access_control::only_role(REWARD_MANAGER))]
-    default fn claim_from(&mut self, from: AccountId) -> Result<(), RewardError>  {
+    default fn _claim_from(&mut self, from: AccountId) -> Result<(), RewardError>  {
         // get all pending rewards for this account
         match self.data::<Data>().pending_rewards.get(&from) {
             Some(pending_rewards) => {

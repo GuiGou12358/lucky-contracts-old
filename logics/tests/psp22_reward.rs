@@ -164,7 +164,7 @@ pub mod psp22_reward {
             }
 
             // alice claims => alice doesn't have anymore rewards
-            contract.claim_from(accounts.alice).unwrap();
+            contract._claim_from(accounts.alice).unwrap();
             match contract.get_pending_rewards_from(accounts.alice) {
                 Ok(None) => debug_println!("no rewards for Alice"),
                 _ => panic!("Alice should have no rewards"),
@@ -176,14 +176,14 @@ pub mod psp22_reward {
             }
             
             // bob claims => bob doesn't have anymore rewards
-            contract.claim_from(accounts.bob).unwrap();
+            contract._claim_from(accounts.bob).unwrap();
             match contract.get_pending_rewards_from(accounts.bob) {
                 Ok(None) => debug_println!("no rewards for bob"),
                 _ => panic!("Bob should have no rewards"),
             }
 
             // claims no rewards => Error
-            match contract.claim_from(accounts.bob) {
+            match contract._claim_from(accounts.bob) {
                 Err(NoReward) => debug_println!("no rewards for bob"),
                 _ => panic!("Error 1"),
             }

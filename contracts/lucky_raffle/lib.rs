@@ -154,6 +154,27 @@ pub mod rafle_contract {
 
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
+        pub fn set_dapps_staking_developer_address(&mut self, address: AccountId) -> Result<(), ContractError> {
+            self.dapps_staking_developer_address = address;
+            Ok(())
+        }
+
+        #[ink(message)]
+        #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
+        pub fn set_lucky_oracle_address(&mut self, address: AccountId) -> Result<(), ContractError> {
+            self.lucky_oracle_address = address;
+            Ok(())
+        }
+
+        #[ink(message)]
+        #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
+        pub fn set_reward_manager_address(&mut self, address: AccountId) -> Result<(), ContractError> {
+            self.reward_manager_address = address;
+            Ok(())
+        }
+
+        #[ink(message)]
+        #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn upgrade_contract(&mut self, new_code_hash: [u8; 32]) -> Result<(), ContractError> {
             ink_env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
             Ok(())

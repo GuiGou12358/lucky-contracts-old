@@ -1,5 +1,5 @@
 [package]
-name = "lucky_orchestrator"
+name = "lucky_raffle"
 version = "0.1.0"
 authors = ["guigou"]
 edition = "2021"
@@ -22,7 +22,7 @@ reward_manager = { path = "../reward_manager", default-features = false, feature
 dapps_staking_developer = { path = "../dapps_staking_developer", default-features = false, features = ["ink-as-dependency"] }
 
 [lib]
-name = "lucky_orchestrator"
+name = "lucky_raffle"
 path = "lib.rs"
 crate-type = ["cdylib"]
 
