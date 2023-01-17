@@ -40,32 +40,32 @@ Structure of the project:
 This smart contract will be registrered as developer in the dAppStaking module and will receive rewards from dAppStaking.
 The smart contract 'Raffle' will be whitelisted to be able to withdraw these rewards.
 
-**Build the contract **
+### Build the contract ###
 ```bash
 cd contracts/dapps_staking_developer
-cargo conntract build
+cargo contract build
 ```
 
 ## Smart contract 'lucky Oracle'
 
 This smart contract will act as an Oracle to provide the following data:
- - list of participants who stake/vote for this dApp
+ - list of participants who stake/vote for this dApp in dAppStaking module
  - rewards received from dAppStaking (developer rewards)  
 
-**Build the contract **
+### Build the contract ###
 ```bash
 cd contracts/lucky_oracle
-cargo conntract build
+cargo contract build
 ```
 
 ## Smart contract 'reward Manager'
 
 This smart contract will manage rewards to distribute to the lucky addresses
 
-**Build the contract **
+### Build the contract ###
 ```bash
 cd contracts/reward_manager
-cargo conntract build
+cargo contract build
 ```
 
 ## Smart contract 'lucky Raffle'
@@ -74,19 +74,19 @@ This smart contract will :
  - read the data from the oracle
  - randomly select address(es) in the list of participants
  - transfer the fund from 'dAppStacking developer' to 'reward Manager' contracts
- - set the lucky addresse in the 'reward Manager' contract  
+ - set the lucky address(es) in the 'reward Manager' contract  
 
-**Build the contract **
+### Build the contract ###
 ```bash
 cd contracts/lucky_raffle
-cargo conntract build
+cargo contract build
 ```
 
 
 ## Runs the tests
 
 ```bash
-cargo conntract test
+cargo contract test
 ```
 
 
