@@ -1,35 +1,94 @@
-# Loto
-My first smartcontract to learn Rust and Wasm!
+# Lucky-contracts
+Smartcontracts to distribute the rewards received by the developer from dAppStaking.
+Based on the configuration (ratioDistribition) 100%, 80%, ... of rewards will be distributed randomly to 1,2,3, ... lucky participant(s).
 
-I try to create a lib to redistribute randomly (or not) some rewards with the main idea:
-  - the rewards can come from several sources: dAppStaking, vault or strategy in DeFi, ...
-  - the rewards can be any fungible or non-fungible token
-  - the rewards can be distributed to all participants or only a subset of participants
-  - the accounts receiving the rewards can be randomly selected or set by another smartcontract (the winner of a game, ...)
-  
-In this first implementation, rewards and participants are set manually. The winners (accounts receiving the rewards) are randomly selected.
 
-Structure of the lib:
+Structure of the project:
 <pre>
+ |-- contracts/
+ |   |-- dapps_staking_developer/
+ |       |-- lib.rs
+ |   |-- lucky_oracle/
+ |       |-- lib.rs
+ |   |-- lucky_raffle/
+ |       |-- lib.rs
+ |   |-- reward_manager/
+ |       |-- lib.rs
  |-- traits/
- |   |-- participant_management.rs
- |   |-- rafle.rs    
- |   |-- game.rs
- |   |-- reward/
- |       |-- reward.rs
+ |   |-- reward
  |       |-- psp22_reward.rs
- |-- impls/
- |   |-- manual_participant_management.rs
- |   |-- rafle.rs    
- |   |-- game.rs
- |   |-- reward/
- |       |-- psp2/
+ |   |-- oracle.rs
+ |   |-- raffle.rs
+ |   |-- random_generators.rs
+ |-- logics/
+ |   |-- helpers/
+ |       |-- helper.rs
+ |   |-- impls/
+ |       |-- reward
  |           |-- psp22_reward.rs
- |           |-- native_psp22_reward.rs
+ |       |-- oracle.rs
+ |       |-- raffle.rs    
+ |       |-- random_generators.rs
  |-- tests/
- |   |-- manual_participant_management.rs
- |   |-- native_psp22_reward.rs   
- |   |-- game.rs
+ |   |-- oracle.rs
+ |   |-- psp22_reward.rs   
+ |   |-- raffle.rs
  </pre>
  
- First contract: contract/contract_1
+## Smart contract 'dAppStaking Developer'
+
+This smart contract will be registrered as developer in the dAppStaking module and will receive rewards from dAppStaking.
+The smart contract 'Raffle' will be whitelisted to be able to withdraw these rewards.
+
+**Build the contract **
+```bash
+cd contracts/dapps_staking_developer
+cargo conntract build
+```
+
+## Smart contract 'lucky Oracle'
+
+This smart contract will act as an Oracle to provide the following data:
+ - list of participants who stake/vote for this dApp
+ - rewards received from dAppStaking (developer rewards)  
+
+**Build the contract **
+```bash
+cd contracts/lucky_oracle
+cargo conntract build
+```
+
+## Smart contract 'reward Manager'
+
+This smart contract will manage rewards to distribute to the lucky addresses
+
+**Build the contract **
+```bash
+cd contracts/reward_manager
+cargo conntract build
+```
+
+## Smart contract 'lucky Raffle'
+
+This smart contract will :
+ - read the data from the oracle
+ - randomly select address(es) in the list of participants
+ - transfer the fund from 'dAppStacking developer' to 'reward Manager' contracts
+ - set the lucky addresse in the 'reward Manager' contract  
+
+**Build the contract **
+```bash
+cd contracts/lucky_raffle
+cargo conntract build
+```
+
+
+## Runs the tests
+
+```bash
+cargo conntract test
+```
+
+
+
+
