@@ -21,7 +21,7 @@ pub mod rafle_contract {
 
     /// Event emitted when the Rafle is done
     #[ink(event)]
-    pub struct RafleDone {
+    pub struct RaffleDone {
         #[ink(topic)]
         contract: AccountId,
         #[ink(topic)]
@@ -136,8 +136,8 @@ pub mod rafle_contract {
                 .fire()
                 .map_err(|_| ContractError::CrossContractCallError2)?;
 
-            // emit event RafleDone
-            self.env().emit_event(RafleDone {
+            // emit event RaffleDone
+            self.env().emit_event(RaffleDone {
                 contract: self.env().caller(),
                 era,
                 nb_winners: nb_winners as u8,
@@ -160,6 +160,11 @@ pub mod rafle_contract {
         }
 
         #[ink(message)]
+        pub fn get_dapps_staking_developer_address(&mut self) -> AccountId {
+            self.dapps_staking_developer_address
+        }
+
+        #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn set_lucky_oracle_address(&mut self, address: AccountId) -> Result<(), ContractError> {
             self.lucky_oracle_address = address;
@@ -167,10 +172,20 @@ pub mod rafle_contract {
         }
 
         #[ink(message)]
+        pub fn get_lucky_oracle_address(&mut self) -> AccountId {
+            self.lucky_oracle_address
+        }
+
+        #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn set_reward_manager_address(&mut self, address: AccountId) -> Result<(), ContractError> {
             self.reward_manager_address = address;
             Ok(())
+        }
+
+        #[ink(message)]
+        pub fn get_reward_manager_address(&mut self) -> AccountId {
+            self.reward_manager_address
         }
 
         #[ink(message)]
@@ -187,7 +202,6 @@ pub mod rafle_contract {
             Self::env().transfer(caller, value).map_err(|_| ContractError::TransferError)?;
             Ok(())
         }
-
 
     }
 

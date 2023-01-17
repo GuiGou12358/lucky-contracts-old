@@ -45,9 +45,13 @@ where
         Ok(())
     }
 
-    default fn get_ratio_distribution(&self) -> Result<Vec<Balance>, RaffleError> {
+    default fn get_ratio_distribution(&self) -> Vec<Balance> {
         let ratio = &self.data::<Data>().ratio_distribution;
-        Ok(ratio.to_vec())
+        ratio.to_vec()
+    }    
+
+    default fn get_total_ratio_distribution(&self) -> Balance {
+        self.data::<Data>().total_ratio_distribution
     }    
 
     default fn get_last_era_done(&self) -> u32 {

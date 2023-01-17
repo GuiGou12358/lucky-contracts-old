@@ -16,7 +16,10 @@ pub trait Raffle {
     fn set_ratio_distribution(&mut self, ratio: Vec<Balance>, total_ratio: Balance) -> Result<(), RaffleError>;
 
     #[ink(message)]
-    fn get_ratio_distribution(&self) -> Result<Vec<Balance>, RaffleError>;
+    fn get_ratio_distribution(&self) -> Vec<Balance>;
+
+    #[ink(message)]
+    fn get_total_ratio_distribution(&self) -> Balance;
 
     #[ink(message)]
     fn get_last_era_done(&self) -> u32;
