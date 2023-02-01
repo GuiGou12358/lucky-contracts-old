@@ -4,7 +4,6 @@
 #[openbrush::contract]
 pub mod lucky_oracle {
 
-    use ink_storage::traits::SpreadAllocate;
     use openbrush::{
         modifiers,
         traits::Storage
@@ -37,7 +36,7 @@ pub mod lucky_oracle {
 
     /// Contract storage
     #[ink(storage)]
-    #[derive(Default, Storage, SpreadAllocate)]
+    #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
         oracle_data: oracle::Data,
@@ -53,18 +52,17 @@ pub mod lucky_oracle {
     impl Contract {
         #[ink(constructor)]
         pub fn new() -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                let caller = instance.env().caller();
-                instance._init_with_admin(caller);
-                instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
-
-            })
+            let mut instance = Self::default();
+            let caller = instance.env().caller();
+            instance._init_with_admin(caller);
+            instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
+            instance
         }
 
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn upgrade_contract(&mut self, new_code_hash: [u8; 32]) -> Result<(), ContractError> {
-            ink_env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
+            ink::env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
             Ok(())
         }
 

@@ -4,7 +4,6 @@
 #[cfg(test)]
 #[openbrush::contract]
 pub mod oracle {
-    use ink_storage::traits::SpreadAllocate;
     use openbrush::contracts::access_control::{*, access_control};
     use openbrush::traits::Storage;
 
@@ -14,7 +13,7 @@ pub mod oracle {
     };
 
     #[ink(storage)]
-    #[derive(Default, Storage, SpreadAllocate)]
+    #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
         oracle_data: oracle::Data,
@@ -28,26 +27,25 @@ pub mod oracle {
 
     impl Contract {
         #[ink(constructor)]
-        pub fn default() -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                instance.oracle_data = oracle::Data::default();
-                let caller = instance.env().caller();
-                instance._init_with_admin(caller);
-                instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
-            })
+        pub fn new() -> Self {
+            let mut instance = Self::default();
+            instance.oracle_data = oracle::Data::default();
+            let caller = instance.env().caller();
+            instance._init_with_admin(caller);
+            instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
+            instance
         }
 
     }
 
     mod tests {
-        use ink_lang as ink;
         use openbrush::test_utils::accounts;
 
         use super::*;
 
         #[ink::test]
         fn test_participants() {
-            let mut contract = Contract::default();
+            let mut contract = Contract::new();
 
             let accounts = accounts();
             let account_1 = accounts.alice;
@@ -77,7 +75,7 @@ pub mod oracle {
 
         #[ink::test]
         fn test_rewards() {
-            let mut contract = Contract::default();
+            let mut contract = Contract::new();
 
             contract.set_rewards(1, 1000).unwrap();
             contract.set_rewards(2, 500).unwrap();

@@ -3,8 +3,7 @@
 
 #[openbrush::contract]
 pub mod rafle_contract {
-    use ink_env::call::{Call, ExecutionInput, Selector};
-    use ink_storage::traits::SpreadAllocate;
+    use ink::env::call::{Call, ExecutionInput, Selector};
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE};
 
@@ -60,7 +59,7 @@ pub mod rafle_contract {
 
     /// Contract storage
     #[ink(storage)]
-    #[derive(Default, Storage, SpreadAllocate)]
+    #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
         raffle: raffle::Data,
@@ -81,14 +80,14 @@ pub mod rafle_contract {
             lucky_oracle_address: AccountId,
             reward_manager_address: AccountId,
         ) -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                let caller = instance.env().caller();
-                instance._init_with_admin(caller);
-                instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
-                instance.dapps_staking_developer_address = dapps_staking_developer_address;
-                instance.lucky_oracle_address = lucky_oracle_address;
-                instance.reward_manager_address = reward_manager_address;
-            })
+            let mut instance = Self::default();
+            let caller = instance.env().caller();
+            instance._init_with_admin(caller);
+            instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
+            instance.dapps_staking_developer_address = dapps_staking_developer_address;
+            instance.lucky_oracle_address = lucky_oracle_address;
+            instance.reward_manager_address = reward_manager_address;
+            instance
         }
 
         #[ink(message)]
@@ -106,7 +105,7 @@ pub mod rafle_contract {
             let nb_winners = winners.len();
 
             // withdraw the rewards from developer dAppsStaking
-            ink_env::call::build_call::<Environment>()
+            ink::env::call::build_call::<Environment>()
                 .call_type(
                     Call::new()
                         .callee(self.dapps_staking_developer_address)
@@ -121,7 +120,7 @@ pub mod rafle_contract {
 
 
             // set the list of winners and fund the rewards 
-            ink_env::call::build_call::<Environment>()
+            ink::env::call::build_call::<Environment>()
                 .call_type(
                     Call::new()
                         .callee(self.reward_manager_address)
@@ -191,7 +190,7 @@ pub mod rafle_contract {
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn upgrade_contract(&mut self, new_code_hash: [u8; 32]) -> Result<(), ContractError> {
-            ink_env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
+            ink::env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
             Ok(())
         }
 

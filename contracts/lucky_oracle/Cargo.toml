@@ -5,16 +5,10 @@ authors = ["guigou"]
 edition = "2021"
 
 [dependencies]
-ink_primitives = { version = "3.4", default-features = false }
-ink_metadata = { version = "3.4", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3.4", default-features = false }
-ink_storage = { version = "3.4", default-features = false }
-ink_lang = { version = "3.4", default-features = false }
-ink_prelude = { version = "3.4", default-features = false}
+ink = { git = "https://github.com/paritytech/ink", rev = "4655a8b4413cb50cbc38d1b7c173ad426ab06cde", default-features = false}
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-#require to clone it because v2.3 is not released yet
-openbrush = { git = "https://github.com/GuiGou12358/openbrush-contracts", default-features = false, features = ["access_control"] }
+scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
+openbrush = { git = "https://github.com/727-Ventures/openbrush-contracts", default-features = false, features = ["access_control"] }
 lucky = { path = "../../logics", default-features = false }
 
 [lib]
@@ -25,14 +19,8 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = ["std"]
 std = [
-    "ink_primitives/std",
-    "ink_metadata",
-    "ink_metadata/std",
-    "ink_env/std",
-    "ink_storage/std",
-    "ink_lang/std",
+    "ink/std",
     "scale/std",
-    "scale-info",
     "scale-info/std",
     "openbrush/std",
     "lucky/std",

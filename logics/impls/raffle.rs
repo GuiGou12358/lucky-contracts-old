@@ -1,4 +1,4 @@
-use ink_prelude::vec::Vec;
+use ink::prelude::vec::Vec;
 use openbrush::contracts::access_control::{access_control, RoleType};
 use openbrush::traits::{AccountId, Balance, Storage};
 
@@ -12,7 +12,7 @@ use crate::traits::random_generator::RandomGenerator;
 use crate::helpers::helper;
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
-pub const RAFFLE_MANAGER: RoleType = ink_lang::selector_id!("RAFFLE_MANAGER");
+pub const RAFFLE_MANAGER: RoleType = ink::selector_id!("RAFFLE_MANAGER");
 
 #[derive(Default, Debug)]
 #[openbrush::upgradeable_storage(STORAGE_KEY)]

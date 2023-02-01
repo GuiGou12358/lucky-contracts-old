@@ -11,7 +11,6 @@ pub use self::dapps_staking_developer::{
 #[openbrush::contract]
 pub mod dapps_staking_developer {
 
-    use ink_storage::traits::SpreadAllocate;
     use openbrush::{
         modifiers,
         traits::Storage
@@ -23,7 +22,7 @@ pub mod dapps_staking_developer {
         RoleType
     };
 
-    const WHITELISTED_ADDRESS: RoleType = ink_lang::selector_id!("WHITELISTED_ADDRESS");
+    const WHITELISTED_ADDRESS: RoleType = ink::selector_id!("WHITELISTED_ADDRESS");
 
     /// Errors occurred in the contract
     #[derive(Debug, Eq, PartialEq, scale::Encode, scale::Decode)]
@@ -43,7 +42,7 @@ pub mod dapps_staking_developer {
 
     /// Contract storage
     #[ink(storage)]
-    #[derive(Default, Storage, SpreadAllocate)]
+    #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
         access: access_control::Data,
@@ -55,12 +54,11 @@ pub mod dapps_staking_developer {
     impl Contract {
         #[ink(constructor)]
         pub fn new() -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                let caller = instance.env().caller();
-                instance._init_with_admin(caller);
-                instance.grant_role(WHITELISTED_ADDRESS, caller).expect("Should grant the role WHITELISTED_ADDRESS");
-
-            })
+            let mut instance = Self::default();
+            let caller = instance.env().caller();
+            instance._init_with_admin(caller);
+            instance.grant_role(WHITELISTED_ADDRESS, caller).expect("Should grant the role WHITELISTED_ADDRESS");
+            instance
         }
 
         #[ink(message, selector = 0x410fcc9d)]
@@ -74,7 +72,7 @@ pub mod dapps_staking_developer {
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn upgrade_contract(&mut self, new_code_hash: [u8; 32]) -> Result<(), ContractError> {
-            ink_env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
+            ink::env::set_code_hash(&new_code_hash).map_err(|_| ContractError::UpgradeError)?;
             Ok(())
         }
 

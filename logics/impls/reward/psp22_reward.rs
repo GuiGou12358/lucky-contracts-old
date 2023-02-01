@@ -1,7 +1,7 @@
 use openbrush::contracts::access_control::{access_control, RoleType};
 use openbrush::storage::Mapping;
 use openbrush::traits::{AccountId, Balance, Storage};
-use ink_prelude::vec::Vec; 
+use ink::prelude::vec::Vec;
 
 pub use crate::traits::reward::{
     psp22_reward,
@@ -11,8 +11,8 @@ pub use crate::traits::reward::{
 
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
-pub const REWARD_MANAGER: RoleType = ink_lang::selector_id!("REWARD_MANAGER");
-pub const REWARD_VIEWER: RoleType = ink_lang::selector_id!("REWARD_VIEWER");
+pub const REWARD_MANAGER: RoleType = ink::selector_id!("REWARD_MANAGER");
+pub const REWARD_VIEWER: RoleType = ink::selector_id!("REWARD_VIEWER");
 
 #[derive(Default, Debug)]
 #[openbrush::upgradeable_storage(STORAGE_KEY)]

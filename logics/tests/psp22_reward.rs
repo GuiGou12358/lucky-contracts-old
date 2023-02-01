@@ -4,7 +4,6 @@
 #[cfg(test)]
 #[openbrush::contract]
 pub mod psp22_reward {
-    use ink_storage::traits::SpreadAllocate;
     use openbrush::contracts::access_control::{*, access_control};
     use openbrush::traits::Storage;
 
@@ -12,7 +11,7 @@ pub mod psp22_reward {
     use lucky::impls::reward::psp22_reward::*;
 
     #[ink(storage)]
-    #[derive(Default, Storage, SpreadAllocate)]
+    #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
         rewards: psp22_reward::Data,
@@ -25,14 +24,14 @@ pub mod psp22_reward {
 
     impl Contract {
         #[ink(constructor)]
-        pub fn default() -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                instance.rewards = psp22_reward::Data::default();
-                let caller = instance.env().caller();
-                instance._init_with_admin(caller);
-                instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
-                instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
-            })
+        pub fn new() -> Self {
+            let mut instance = Self::default();
+            instance.rewards = psp22_reward::Data::default();
+            let caller = instance.env().caller();
+            instance._init_with_admin(caller);
+            instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
+            instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
+            instance
         }
 
     }
@@ -47,8 +46,7 @@ pub mod psp22_reward {
     }
 
     mod tests {
-        use ink_lang as ink;
-        use ink_env::debug_println;
+        use ink::env::debug_println;
         use openbrush::test_utils::accounts;
 
         use super::*;
@@ -57,13 +55,13 @@ pub mod psp22_reward {
         #[ink::test]
         fn test_fund_rewards_and_add_winners_insufficient_transferred_value() {
 
-            let mut contract = Contract::default();
+            let mut contract = Contract::new();
 
             let accounts = accounts();
             let era = 1;
 
             // 600 > 100 => error
-            let result = ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+            let result = ink::env::pay_with_call!(contract.fund_rewards_and_add_winners(
                 era, [(accounts.alice, 600)].to_vec()), 100
             );     
             
@@ -73,7 +71,7 @@ pub mod psp22_reward {
             };
             
             // 600 > 100 => ok
-            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+            ink::env::pay_with_call!(contract.fund_rewards_and_add_winners(
                 era, [(accounts.alice, 600)].to_vec()), 600
             ).unwrap();
         }
@@ -82,12 +80,12 @@ pub mod psp22_reward {
         #[ink::test]
         fn test_fund_rewards_and_add_winners() {
 
-            let mut contract = Contract::default();
+            let mut contract = Contract::new();
 
             let accounts = accounts();
 
             // set the rewards for era 1
-            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+            ink::env::pay_with_call!(contract.fund_rewards_and_add_winners(
                 1,
                 [(accounts.alice, 600)].to_vec()
             ), 1000).unwrap();
@@ -102,7 +100,7 @@ pub mod psp22_reward {
             };
 
             // set the rewards for era 2
-            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+            ink::env::pay_with_call!(contract.fund_rewards_and_add_winners(
                 2,
                 [(accounts.bob, 400)].to_vec()
             ), 1000).unwrap();
@@ -117,7 +115,7 @@ pub mod psp22_reward {
             }
 
             // set the rewards for era 3
-            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+            ink::env::pay_with_call!(contract.fund_rewards_and_add_winners(
                 3,
                 [(accounts.alice, 600), (accounts.django, 200)].to_vec()
             ), 1000).unwrap();
@@ -141,13 +139,13 @@ pub mod psp22_reward {
         #[ink::test]
         fn test_no_current_reward_after_claiming() {
 
-            let mut contract = Contract::default();
+            let mut contract = Contract::new();
 
             let accounts = accounts();
             let era = 1;
 
             // set the rewards for this era
-            ink_env::pay_with_call!(contract.fund_rewards_and_add_winners(
+            ink::env::pay_with_call!(contract.fund_rewards_and_add_winners(
                 era,
                 [(accounts.alice, 600), (accounts.bob, 400)].to_vec()
             ), 1000).unwrap();

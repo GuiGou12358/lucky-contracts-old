@@ -1,5 +1,4 @@
-use ink_env::debug_println;
-use ink_prelude::vec::Vec;
+use ink::prelude::vec::Vec;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
@@ -46,15 +45,13 @@ pub fn select_winners(
         // TODO we can cap the weight by participant to avoid a whale wins always
         let total_weight = total_weight(&participants)?;
 
-        // use the first account to further randomize
-        let mut account = participants[0].0;
+        // use the last account to further randomize
+        let mut account = participants[participants.len() - 1].0;
 
         let mut unsuccessful_choice = 0;
         loop {
             // generate the random number
             let random_weight = random_generator.get_random_number(0, total_weight, account)?;
-
-            debug_println!("random_weight: {} - total_weight: {}", random_weight, total_weight);
 
             // select the reward_manager account
             let winner =  select_winner_matching_weight(&participants, random_weight)?;

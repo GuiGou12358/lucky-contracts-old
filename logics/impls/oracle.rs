@@ -1,4 +1,4 @@
-use ink_prelude::vec::Vec;
+use ink::prelude::vec::Vec;
 use openbrush::contracts::access_control::{access_control, RoleType};
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
@@ -8,7 +8,7 @@ use openbrush::storage::Mapping;
 pub use crate::traits::oracle::*;
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
-pub const ORACLE_DATA_MANAGER: RoleType = ink_lang::selector_id!("ORACLE_DATA_MANAGER");
+pub const ORACLE_DATA_MANAGER: RoleType = ink::selector_id!("ORACLE_DATA_MANAGER");
 
 #[derive(Default, Debug)]
 #[openbrush::upgradeable_storage(STORAGE_KEY)]
@@ -43,6 +43,7 @@ impl<T> OracleDataManager for T
 
     #[openbrush::modifiers(access_control::only_role(ORACLE_DATA_MANAGER))]
     default fn add_participant(&mut self, era: u32, participant: AccountId, value: Balance) -> Result<(), OracleManagementError> {
+        // TODO here we can have the same account added many times for the same era => to fix it!
         self.data::<Data>().participants.push((participant, era, value));
         Ok(())
     }

@@ -4,7 +4,6 @@
 #[cfg(test)]
 #[openbrush::contract]
 pub mod raffle {
-    use ink_storage::traits::SpreadAllocate;
     use lucky::impls::{
         *,
         oracle::*,
@@ -16,7 +15,7 @@ pub mod raffle {
     use openbrush::traits::Storage;
 
     #[ink(storage)]
-    #[derive(Default, Storage, SpreadAllocate)]
+    #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
         oracle_data: oracle::Data,
@@ -33,18 +32,18 @@ pub mod raffle {
 
     impl Contract {
         #[ink(constructor)]
-        pub fn default() -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
-                instance.oracle_data = oracle::Data::default();
-                instance.reward = psp22_reward::Data::default();
-                instance.raffle = raffle::Data::default();
-                let caller = instance.env().caller();
-                instance._init_with_admin(caller);
-                instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
-                instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
-                instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
-                instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
-            })
+        pub fn new() -> Self {
+            let mut instance = Self::default();
+            instance.oracle_data = oracle::Data::default();
+            instance.reward = psp22_reward::Data::default();
+            instance.raffle = raffle::Data::default();
+            let caller = instance.env().caller();
+            instance._init_with_admin(caller);
+            instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
+            instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
+            instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
+            instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
+            instance
         }
 
         #[ink(message)]
@@ -60,7 +59,7 @@ pub mod raffle {
             let winners = self._run_raffle(era, participants, rewards)?;
 
             // transfer the rewards and the winners
-            ink_env::pay_with_call!(self.fund_rewards_and_add_winners(era, winners), rewards)?;
+            ink::env::pay_with_call!(self.fund_rewards_and_add_winners(era, winners), rewards)?;
 
             Ok(())
         }
@@ -101,8 +100,7 @@ pub mod raffle {
     }
 
     mod tests {
-        use ink_env::debug_println;
-        use ink_lang as ink;
+        use ink::env::debug_println;
         use openbrush::test_utils::accounts;
 
         use super::*;
@@ -110,7 +108,7 @@ pub mod raffle {
 
         #[ink::test]
         fn test_ratio_distribution() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
 
             // 50 + 30 + 20 > 80 => Error
             let result = contract.set_ratio_distribution(vec![50, 30, 20], 90);
@@ -137,7 +135,7 @@ pub mod raffle {
 
         #[ink::test]
         fn test_run_raffle_no_ratio_set() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
 
             //contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
@@ -156,7 +154,7 @@ pub mod raffle {
 
         #[ink::test]
         fn test_run_raffle_no_participant() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
 
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
@@ -172,7 +170,7 @@ pub mod raffle {
 
         #[ink::test]
         fn test_run_raffle_no_reward() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
 
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
@@ -188,10 +186,10 @@ pub mod raffle {
                 _ => panic!("Error 1"),
             };
         }
-   
+  
         #[ink::test]
         fn test_run_raffle_with_zero_in_ratio() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
             let accounts = accounts();
 
             let participants = vec![
@@ -220,7 +218,7 @@ pub mod raffle {
         #[ink::test]
         fn test_run_raffle_not_already_done() {
 
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
             
             contract.set_ratio_distribution(vec![100], 100).unwrap();
 
@@ -256,7 +254,7 @@ pub mod raffle {
 
         #[ink::test]
         fn test_run_raffle_share_full_rewards() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
             let accounts = accounts();
 
             let rewards = 1000;
@@ -288,7 +286,7 @@ pub mod raffle {
 
         #[ink::test]
         fn test_run_raffle_share_partial_rewards() {
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
             let accounts = accounts();
 
             let participants = vec![
@@ -316,11 +314,10 @@ pub mod raffle {
         }
 
 
-
         #[ink::test]
         fn test_raffle_contract()  {
 
-            let mut contract = super::Contract::default();
+            let mut contract = super::Contract::new();
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
             let era = 1;
