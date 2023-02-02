@@ -87,5 +87,34 @@ pub mod oracle {
 
         }
 
+        #[ink::test]
+        fn test_clear_data() {
+            let mut contract = Contract::new();
+
+            let accounts = accounts();
+            let account_1 = accounts.alice;
+            let account_2 = accounts.bob;
+            let account_3 = accounts.charlie;
+
+            contract.add_participants(1, vec![(account_1, 100), (account_2, 200)]).unwrap();
+            contract.set_rewards(1, 1000).unwrap();
+
+            contract.add_participants(2, vec![(account_3, 300)]).unwrap();
+            contract.set_rewards(2, 500).unwrap();
+
+            assert_eq!(contract.get_data(1).participants.len(), 2);
+            assert_eq!(contract.get_data(1).rewards, 1000);
+            assert_eq!(contract.get_data(2).participants.len(), 1);
+            assert_eq!(contract.get_data(2).rewards, 500);
+
+            contract.clear_data(1).unwrap();
+            // only the data for era 1 must be clear
+            assert_eq!(contract.get_data(1).participants.len(), 0);
+            assert_eq!(contract.get_data(1).rewards, 0);
+            assert_eq!(contract.get_data(2).participants.len(), 1);
+            assert_eq!(contract.get_data(2).rewards, 500);
+
+        }
+
     }
 }

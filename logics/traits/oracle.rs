@@ -46,6 +46,10 @@ pub trait OracleDataManager {
     #[ink(message)]
     fn set_rewards(&mut self, era: u32, reward: Balance) -> Result<(), OracleManagementError>;
 
+    /// Clear the data (participants and rewards) stored for a given era
+    #[ink(message)]
+    fn clear_data(&mut self, era: u32) -> Result<(), OracleManagementError>;
+
 }
 
 

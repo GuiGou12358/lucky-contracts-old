@@ -62,4 +62,22 @@ impl<T> OracleDataManager for T
         Ok(())
     }
 
+    #[openbrush::modifiers(access_control::only_role(ORACLE_DATA_MANAGER))]
+    default fn clear_data(&mut self, era: u32) -> Result<(), OracleManagementError> {
+        // remove the rewards for this era
+        self.data::<Data>().rewards.remove(&era);
+        // remove all partciipants for this era
+        //self.data::<Data>().participants.drain_filter(|(_, e, _)| *e == era);
+        let mut i = 0;
+        while i < self.data::<Data>().participants.len() {
+            if self.data::<Data>().participants[i].1 == era {
+                self.data::<Data>().participants.remove(i);
+            } else {
+                i += 1;
+            }
+        }
+
+        Ok(())
+    }
+
 }
