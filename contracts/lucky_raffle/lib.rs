@@ -3,7 +3,7 @@
 
 #[openbrush::contract]
 pub mod rafle_contract {
-    use ink::env::call::{Call, ExecutionInput, Selector};
+    use ink::env::call::{ExecutionInput, Selector};
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE};
 
@@ -40,6 +40,9 @@ pub mod rafle_contract {
         CrossContractCallError2,
         TransferError,
         UpgradeError,
+        LuckyOracleAddressMissing,
+        DappsStakingDeveloperAddressMissing,
+        RewardManagerAddressMissing,
     }
 
     /// convertor from AccessControlError to ContractError
@@ -65,9 +68,9 @@ pub mod rafle_contract {
         raffle: raffle::Data,
         #[storage_field]
         access: access_control::Data,
-        dapps_staking_developer_address: AccountId,
-        lucky_oracle_address: AccountId,
-        reward_manager_address: AccountId,
+        dapps_staking_developer_address: Option<AccountId>,
+        lucky_oracle_address: Option<AccountId>,
+        reward_manager_address: Option<AccountId>,
     }
 
     impl Raffle for Contract{}
@@ -84,9 +87,9 @@ pub mod rafle_contract {
             let caller = instance.env().caller();
             instance._init_with_admin(caller);
             instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
-            instance.dapps_staking_developer_address = dapps_staking_developer_address;
-            instance.lucky_oracle_address = lucky_oracle_address;
-            instance.reward_manager_address = reward_manager_address;
+            instance.dapps_staking_developer_address = Some(dapps_staking_developer_address);
+            instance.lucky_oracle_address = Some(lucky_oracle_address);
+            instance.reward_manager_address = Some(reward_manager_address);
             instance
         }
 
@@ -95,7 +98,8 @@ pub mod rafle_contract {
         pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
 
             // get the oracle data
-            let oracle_data = OracleDataConsumerRef::get_data(&mut self.lucky_oracle_address, era);
+            let lucky_oracle_address = self.dapps_staking_developer_address.ok_or(ContractError::LuckyOracleAddressMissing)?;
+            let oracle_data = OracleDataConsumerRef::get_data(&lucky_oracle_address, era);
 
             let participants = oracle_data.participants;
             let rewards = oracle_data.rewards;
@@ -105,35 +109,31 @@ pub mod rafle_contract {
             let nb_winners = winners.len();
 
             // withdraw the rewards from developer dAppsStaking
+            let dapps_staking_developer_address = self.dapps_staking_developer_address.ok_or(ContractError::DappsStakingDeveloperAddressMissing)?;
             ink::env::call::build_call::<Environment>()
-                .call_type(
-                    Call::new()
-                        .callee(self.dapps_staking_developer_address)
-                )
+                .call(dapps_staking_developer_address)
                 .exec_input(
                     ExecutionInput::new(Selector::new(WITHDRAW_SELECTOR))
                         .push_arg(rewards)
                 )
-                .returns()
-                .fire()
-                .map_err(|_| ContractError::CrossContractCallError1)?;
+                .returns::<()>()
+                .invoke();
+                //.map_err(|_| ContractError::CrossContractCallError1)?;
 
 
             // set the list of winners and fund the rewards 
+            let reward_manager_address = self.dapps_staking_developer_address.ok_or(ContractError::RewardManagerAddressMissing)?;
             ink::env::call::build_call::<Environment>()
-                .call_type(
-                    Call::new()
-                        .callee(self.reward_manager_address)
-                        .transferred_value(rewards)
-                )
+                .call(reward_manager_address)
+                .transferred_value(rewards)
                 .exec_input(
                     ExecutionInput::new(Selector::new(FUND_REWARDS_AND_WINNERS_SELECTOR))
                         .push_arg(era)
                         .push_arg(winners)
                 )
-                .returns()
-                .fire()
-                .map_err(|_| ContractError::CrossContractCallError2)?;
+                .returns::<()>()
+                .invoke();
+                //.map_err(|_| ContractError::CrossContractCallError2)?;
 
             // emit event RaffleDone
             self.env().emit_event(RaffleDone {
@@ -154,36 +154,36 @@ pub mod rafle_contract {
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn set_dapps_staking_developer_address(&mut self, address: AccountId) -> Result<(), ContractError> {
-            self.dapps_staking_developer_address = address;
+            self.dapps_staking_developer_address = Some(address);
             Ok(())
         }
 
         #[ink(message)]
-        pub fn get_dapps_staking_developer_address(&mut self) -> AccountId {
+        pub fn get_dapps_staking_developer_address(&mut self) -> Option<AccountId> {
             self.dapps_staking_developer_address
         }
 
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn set_lucky_oracle_address(&mut self, address: AccountId) -> Result<(), ContractError> {
-            self.lucky_oracle_address = address;
+            self.lucky_oracle_address = Some(address);
             Ok(())
         }
 
         #[ink(message)]
-        pub fn get_lucky_oracle_address(&mut self) -> AccountId {
+        pub fn get_lucky_oracle_address(&mut self) -> Option<AccountId> {
             self.lucky_oracle_address
         }
 
         #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn set_reward_manager_address(&mut self, address: AccountId) -> Result<(), ContractError> {
-            self.reward_manager_address = address;
+            self.reward_manager_address = Some(address);
             Ok(())
         }
 
         #[ink(message)]
-        pub fn get_reward_manager_address(&mut self) -> AccountId {
+        pub fn get_reward_manager_address(&mut self) -> Option<AccountId> {
             self.reward_manager_address
         }
 
