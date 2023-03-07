@@ -43,7 +43,7 @@ The smart contract 'Raffle' will be whitelisted to be able to withdraw these rew
 ### Build the contract ###
 ```bash
 cd contracts/dapps_staking_developer
-cargo contract build
+cargo +nightly contract build
 ```
 
 ## Smart contract 'lucky Oracle'
@@ -55,7 +55,7 @@ This smart contract will act as an Oracle to provide the following data:
 ### Build the contract ###
 ```bash
 cd contracts/lucky_oracle
-cargo contract build
+cargo +nightly contract build
 ```
 
 ## Smart contract 'reward Manager'
@@ -65,7 +65,7 @@ This smart contract will manage rewards to distribute to the lucky addresses
 ### Build the contract ###
 ```bash
 cd contracts/reward_manager
-cargo contract build
+cargo +nightly contract build
 ```
 
 ## Smart contract 'lucky Raffle'
@@ -79,14 +79,14 @@ This smart contract will :
 ### Build the contract ###
 ```bash
 cd contracts/lucky_raffle
-cargo contract build
+cargo +nightly contract build
 ```
 
 
 ## Runs the tests
 
 ```bash
-cargo contract test
+cargo +nightly test
 ```
 
 

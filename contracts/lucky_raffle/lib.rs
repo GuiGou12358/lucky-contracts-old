@@ -3,6 +3,7 @@
 
 #[openbrush::contract]
 pub mod rafle_contract {
+    use ink::prelude::vec::Vec;
     use ink::env::call::{ExecutionInput, Selector};
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE};
@@ -11,7 +12,7 @@ pub mod rafle_contract {
         raffle,
         raffle::*,
     };
-    use lucky::traits::oracle::OracleDataConsumerRef;
+    use lucky::traits::oracle::{OracleDataConsumerRef, OracleData};
 
     // Selector of withdraw: "0x410fcc9d"
     const WITHDRAW_SELECTOR : [u8; 4] = [0x41, 0x0f, 0xcc, 0x9d];
@@ -38,6 +39,8 @@ pub mod rafle_contract {
         RaffleAlreadyDone,
         CrossContractCallError1,
         CrossContractCallError2,
+        CrossContractCallError2a,
+        CrossContractCallError2b,
         TransferError,
         UpgradeError,
         LuckyOracleAddressMissing,
@@ -91,6 +94,82 @@ pub mod rafle_contract {
             instance.lucky_oracle_address = Some(lucky_oracle_address);
             instance.reward_manager_address = Some(reward_manager_address);
             instance
+        }
+
+        #[ink(message)]
+        #[modifiers(only_role(RAFFLE_MANAGER))]
+        pub fn call_1(&mut self, era: u32) -> Result<OracleData, ContractError> {
+
+            // get the oracle data
+            let lucky_oracle_address = self.dapps_staking_developer_address.ok_or(ContractError::LuckyOracleAddressMissing)?;
+            let oracle_data = OracleDataConsumerRef::get_data(&lucky_oracle_address, era);
+
+            Ok(oracle_data)
+        }
+
+
+        #[ink(message)]
+        #[modifiers(only_role(RAFFLE_MANAGER))]
+        pub fn call_2(&mut self, rewards: Balance) -> Result<(), ContractError> {
+
+            // withdraw the rewards from developer dAppsStaking
+            let dapps_staking_developer_address = self.dapps_staking_developer_address.ok_or(ContractError::DappsStakingDeveloperAddressMissing)?;
+            let r = ink::env::call::build_call::<Environment>()
+                .call(dapps_staking_developer_address)
+                .exec_input(
+                    ExecutionInput::new(Selector::new(WITHDRAW_SELECTOR))
+                        .push_arg(rewards)
+                )
+                .returns::<()>()
+                .invoke();
+                //.try_invoke()
+                //.map_err(|_| ContractError::CrossContractCallError2a)?
+                //.map_err(|_| ContractError::CrossContractCallError2b)?;
+            Ok(r)
+        }
+        
+        #[ink(message)]
+        #[modifiers(only_role(RAFFLE_MANAGER))]
+        pub fn call_3(&mut self, era: u32, rewards: Balance, winners: Vec<(AccountId, Balance)>) -> Result<(), ContractError> {
+
+
+            // set the list of winners and fund the rewards 
+            let reward_manager_address = self.dapps_staking_developer_address.ok_or(ContractError::RewardManagerAddressMissing)?;
+            ink::env::call::build_call::<Environment>()
+                .call(reward_manager_address)
+                .transferred_value(rewards)
+                .exec_input(
+                    ExecutionInput::new(Selector::new(FUND_REWARDS_AND_WINNERS_SELECTOR))
+                        .push_arg(era)
+                        .push_arg(winners)
+                )
+                .returns::<()>()
+                .invoke();
+                //.map_err(|_| ContractError::CrossContractCallError2)?;
+
+            Ok(())
+        }
+
+        #[ink(message)]
+        #[modifiers(only_role(RAFFLE_MANAGER))]
+        pub fn call_3a(&mut self, rewards: Balance, winners: Vec<(AccountId, Balance)>) -> Result<(), ContractError> {
+
+
+            // set the list of winners and fund the rewards 
+            let reward_manager_address = self.dapps_staking_developer_address.ok_or(ContractError::RewardManagerAddressMissing)?;
+            ink::env::call::build_call::<Environment>()
+                .call(reward_manager_address)
+                .transferred_value(rewards)
+                .exec_input(
+                    ExecutionInput::new(Selector::new(FUND_REWARDS_AND_WINNERS_SELECTOR))
+                        //.push_arg(era)
+                        .push_arg(winners)
+                )
+                .returns::<()>()
+                .invoke();
+                //.map_err(|_| ContractError::CrossContractCallError2)?;
+
+            Ok(())
         }
 
         #[ink(message)]
