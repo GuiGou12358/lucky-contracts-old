@@ -96,17 +96,6 @@ pub mod rafle_contract {
             instance
         }
 
-        #[ink(message)]
-        #[modifiers(only_role(RAFFLE_MANAGER))]
-        pub fn call_1(&mut self, era: u32) -> Result<OracleData, ContractError> {
-
-            // get the oracle data
-            let lucky_oracle_address = self.dapps_staking_developer_address.ok_or(ContractError::LuckyOracleAddressMissing)?;
-            let oracle_data = OracleDataConsumerRef::get_data(&lucky_oracle_address, era);
-
-            Ok(oracle_data)
-        }
-
 
         #[ink(message)]
         #[modifiers(only_role(RAFFLE_MANAGER))]
@@ -128,56 +117,15 @@ pub mod rafle_contract {
             Ok(r)
         }
         
-        #[ink(message)]
-        #[modifiers(only_role(RAFFLE_MANAGER))]
-        pub fn call_3(&mut self, era: u32, rewards: Balance, winners: Vec<(AccountId, Balance)>) -> Result<(), ContractError> {
 
 
-            // set the list of winners and fund the rewards 
-            let reward_manager_address = self.dapps_staking_developer_address.ok_or(ContractError::RewardManagerAddressMissing)?;
-            ink::env::call::build_call::<Environment>()
-                .call(reward_manager_address)
-                .transferred_value(rewards)
-                .exec_input(
-                    ExecutionInput::new(Selector::new(FUND_REWARDS_AND_WINNERS_SELECTOR))
-                        .push_arg(era)
-                        .push_arg(winners)
-                )
-                .returns::<()>()
-                .invoke();
-                //.map_err(|_| ContractError::CrossContractCallError2)?;
-
-            Ok(())
-        }
-
-        #[ink(message)]
-        #[modifiers(only_role(RAFFLE_MANAGER))]
-        pub fn call_3a(&mut self, rewards: Balance, winners: Vec<(AccountId, Balance)>) -> Result<(), ContractError> {
-
-
-            // set the list of winners and fund the rewards 
-            let reward_manager_address = self.dapps_staking_developer_address.ok_or(ContractError::RewardManagerAddressMissing)?;
-            ink::env::call::build_call::<Environment>()
-                .call(reward_manager_address)
-                .transferred_value(rewards)
-                .exec_input(
-                    ExecutionInput::new(Selector::new(FUND_REWARDS_AND_WINNERS_SELECTOR))
-                        //.push_arg(era)
-                        .push_arg(winners)
-                )
-                .returns::<()>()
-                .invoke();
-                //.map_err(|_| ContractError::CrossContractCallError2)?;
-
-            Ok(())
-        }
 
         #[ink(message)]
         #[modifiers(only_role(RAFFLE_MANAGER))]
         pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
 
             // get the oracle data
-            let lucky_oracle_address = self.dapps_staking_developer_address.ok_or(ContractError::LuckyOracleAddressMissing)?;
+            let lucky_oracle_address = self.lucky_oracle_address.ok_or(ContractError::LuckyOracleAddressMissing)?;
             let oracle_data = OracleDataConsumerRef::get_data(&lucky_oracle_address, era);
 
             let participants = oracle_data.participants;
@@ -201,7 +149,7 @@ pub mod rafle_contract {
 
 
             // set the list of winners and fund the rewards 
-            let reward_manager_address = self.dapps_staking_developer_address.ok_or(ContractError::RewardManagerAddressMissing)?;
+            let reward_manager_address = self.reward_manager_address.ok_or(ContractError::RewardManagerAddressMissing)?;
             ink::env::call::build_call::<Environment>()
                 .call(reward_manager_address)
                 .transferred_value(rewards)
