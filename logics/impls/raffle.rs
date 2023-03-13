@@ -7,7 +7,8 @@ pub use crate::traits::raffle::{
     RaffleError::*,
 };
 
-use crate::traits::random_generator::RandomGenerator;
+pub use crate::traits::random::{Random, RandomError};
+
 
 use crate::helpers::helper;
 
@@ -26,7 +27,7 @@ impl<T> Raffle for T
 where
     T: Storage<Data>,
     T: Storage<access_control::Data>,
-    T: RandomGenerator,
+    T: Random,
 {
 
     #[openbrush::modifiers(access_control::only_role(RAFFLE_MANAGER))]

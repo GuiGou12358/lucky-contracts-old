@@ -10,6 +10,8 @@ pub mod raffle {
         reward::psp22_reward,
         reward::psp22_reward::*,
         raffle::*,
+        random_generator,
+        random_generator::*,
     };
     use openbrush::contracts::access_control::{*, access_control};
     use openbrush::traits::Storage;
@@ -17,6 +19,8 @@ pub mod raffle {
     #[ink(storage)]
     #[derive(Default, Storage)]
     pub struct Contract {
+        #[storage_field]
+        random_generator: random_generator::Data,
         #[storage_field]
         oracle_data: oracle::Data,
         #[storage_field]
@@ -30,11 +34,20 @@ pub mod raffle {
     impl Raffle for Contract{}
     impl AccessControl for Contract{}
 
+
+    impl Random for Contract {
+        fn get_random_number(&mut self, min: u128, max: u128) -> Result<u128, RandomError> {
+            let random = RandomGenerator::get_random_number(self, min, max)?;
+            Ok(random)
+        }
+    }
+
     impl Contract {
         #[ink(constructor)]
         pub fn new() -> Self {
             let mut instance = Self::default();
             instance.oracle_data = oracle::Data::default();
+            instance.random_generator = random_generator::Data::default();
             instance.reward = psp22_reward::Data::default();
             instance.raffle = raffle::Data::default();
             let caller = instance.env().caller();
@@ -43,6 +56,7 @@ pub mod raffle {
             instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
             instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
             instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
+            instance.grant_role(RANDOM_GENERATOR_CONSUMER, caller).expect("Should grant the role RANDOM_GENERATOR_CONSUMER");
             instance
         }
 

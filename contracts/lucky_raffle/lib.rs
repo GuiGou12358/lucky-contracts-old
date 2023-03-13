@@ -3,7 +3,6 @@
 
 #[openbrush::contract]
 pub mod rafle_contract {
-    use ink::prelude::vec::Vec;
     use ink::env::call::{ExecutionInput, Selector};
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE};
@@ -12,7 +11,8 @@ pub mod rafle_contract {
         raffle,
         raffle::*,
     };
-    use lucky::traits::oracle::{OracleDataConsumerRef, OracleData};
+    use lucky::traits::oracle::{OracleDataConsumerRef};
+    use lucky::traits::random_generator::{RandomGeneratorRef};
 
     // Selector of withdraw: "0x410fcc9d"
     const WITHDRAW_SELECTOR : [u8; 4] = [0x41, 0x0f, 0xcc, 0x9d];
@@ -44,6 +44,7 @@ pub mod rafle_contract {
         TransferError,
         UpgradeError,
         LuckyOracleAddressMissing,
+        RandomGeneratorAddressMissing,
         DappsStakingDeveloperAddressMissing,
         RewardManagerAddressMissing,
     }
@@ -73,7 +74,17 @@ pub mod rafle_contract {
         access: access_control::Data,
         dapps_staking_developer_address: Option<AccountId>,
         lucky_oracle_address: Option<AccountId>,
+        random_generator_address: Option<AccountId>,
         reward_manager_address: Option<AccountId>,
+    }
+
+    impl Random for Contract {
+        fn get_random_number(&mut self, min: u128, max: u128) -> Result<u128, RandomError> {
+            // get the random number
+            let random_generator_address = self.random_generator_address.ok_or(RandomError::MissingAddress)?;
+            let random = RandomGeneratorRef::get_random_number(&random_generator_address, min, max)?;
+            Ok(random)
+        }
     }
 
     impl Raffle for Contract{}
@@ -84,6 +95,7 @@ pub mod rafle_contract {
         pub fn new(
             dapps_staking_developer_address: AccountId,
             lucky_oracle_address: AccountId,
+            random_generator_address: AccountId,
             reward_manager_address: AccountId,
         ) -> Self {
             let mut instance = Self::default();
@@ -92,6 +104,7 @@ pub mod rafle_contract {
             instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
             instance.dapps_staking_developer_address = Some(dapps_staking_developer_address);
             instance.lucky_oracle_address = Some(lucky_oracle_address);
+            instance.random_generator_address = Some(random_generator_address);
             instance.reward_manager_address = Some(reward_manager_address);
             instance
         }
@@ -200,6 +213,18 @@ pub mod rafle_contract {
         #[ink(message)]
         pub fn get_lucky_oracle_address(&mut self) -> Option<AccountId> {
             self.lucky_oracle_address
+        }
+
+        #[ink(message)]
+        #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
+        pub fn set_random_generator_address(&mut self, address: AccountId) -> Result<(), ContractError> {
+            self.random_generator_address = Some(address);
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn get_random_generator_address(&mut self) -> Option<AccountId> {
+            self.random_generator_address
         }
 
         #[ink(message)]

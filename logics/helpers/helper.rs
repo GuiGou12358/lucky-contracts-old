@@ -2,10 +2,7 @@ use ink::prelude::vec::Vec;
 use openbrush::traits::AccountId;
 use openbrush::traits::Balance;
 
-use crate::traits::random_generator::{
-    RandomGenerator,
-    RandomGeneratorError
-};
+use crate::traits::random::{Random, RandomError};
 
 /// Return the sum of weight for all participants given in parameters
 fn total_weight(participants: &Vec<(AccountId, u128)>) -> Result<u128, HelperError>  {
@@ -34,7 +31,7 @@ fn select_winner_matching_weight(
 }
 
 pub fn select_winners(
-    random_generator: &dyn RandomGenerator,
+    random_generator: &mut dyn Random,
     participants: Vec<(AccountId, Balance)>,
     nb_winners: usize
 ) -> Result<Vec<AccountId>, HelperError>  {
@@ -45,13 +42,10 @@ pub fn select_winners(
         // TODO we can cap the weight by participant to avoid a whale wins always
         let total_weight = total_weight(&participants)?;
 
-        // use the last account to further randomize
-        let mut account = participants[participants.len() - 1].0;
-
         let mut unsuccessful_choice = 0;
         loop {
             // generate the random number
-            let random_weight = random_generator.get_random_number(0, total_weight, account)?;
+            let random_weight = random_generator.get_random_number(0, total_weight)?;
 
             // select the reward_manager account
             let winner =  select_winner_matching_weight(&participants, random_weight)?;
@@ -68,13 +62,9 @@ pub fn select_winners(
                     if unsuccessful_choice >= participants.len() {
                         break
                     }
-                    // change the account to further randomize
-                    account = participants[unsuccessful_choice].0;
                 } else {
                     // a reward_manager has been selected
                     winners.push(winner);
-                    // this account will be used to further randomize
-                    account = winner;
                     // reset
                     unsuccessful_choice = 0;
 
@@ -101,12 +91,12 @@ pub enum HelperError {
     MulOverFlow,
     AddOverFlow,
     SubOverFlow,
-    RandomGeneratorError(RandomGeneratorError),
+    RandomError(RandomError),
 }
 
 /// convertor from RandomGeneratorError to HelperError
-impl From<RandomGeneratorError> for HelperError {
-    fn from(error: RandomGeneratorError) -> Self {
-        HelperError::RandomGeneratorError(error)
+impl From<RandomError> for HelperError {
+    fn from(error: RandomError) -> Self {
+        HelperError::RandomError(error)
     }
 }
