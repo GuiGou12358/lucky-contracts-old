@@ -109,7 +109,7 @@ pub mod rafle_contract {
             instance
         }
 
-
+/*
         #[ink(message)]
         #[modifiers(only_role(RAFFLE_MANAGER))]
         pub fn call_2(&mut self, rewards: Balance) -> Result<(), ContractError> {
@@ -128,10 +128,8 @@ pub mod rafle_contract {
                 //.map_err(|_| ContractError::CrossContractCallError2a)?
                 //.map_err(|_| ContractError::CrossContractCallError2b)?;
             Ok(r)
-        }
-        
-
-
+        }      
+*/
 
         #[ink(message)]
         #[modifiers(only_role(RAFFLE_MANAGER))]
