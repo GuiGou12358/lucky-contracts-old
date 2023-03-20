@@ -2,7 +2,6 @@
 members = [
     "logics",
     "contracts/dapps_staking_developer",
-    "contracts/lucky_oracle",
     "contracts/random_generator",
     "contracts/reward_manager",
     "contracts/lucky_raffle",

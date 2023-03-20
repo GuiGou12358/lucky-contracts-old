@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 
 #[openbrush::contract]
-pub mod rafle_contract {
+pub mod raffle_contract {
     use ink::env::call::{ExecutionInput, Selector};
     use openbrush::{modifiers, traits::Storage};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE};
@@ -10,8 +10,10 @@ pub mod rafle_contract {
     use lucky::impls::{
         raffle,
         raffle::*,
+        participant_manager,
+        participant_manager::*,
     };
-    use lucky::traits::oracle::{OracleDataConsumerRef};
+    use lucky::impls::reward::psp22_reward::REWARD_MANAGER;
     use lucky::traits::random_generator::{RandomGeneratorRef};
 
     // Selector of withdraw: "0x410fcc9d"
@@ -27,7 +29,9 @@ pub mod rafle_contract {
         #[ink(topic)]
         era: u32,
         pending_rewards: Balance,
-        nb_winners: u8,
+        nb_winners: u16,
+        nb_participants: u16,
+        total_value: Balance,
     }
 
     /// Errors occurred in the contract
@@ -69,11 +73,12 @@ pub mod rafle_contract {
     #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
+        participant_manager: participant_manager::Data,
+        #[storage_field]
         raffle: raffle::Data,
         #[storage_field]
         access: access_control::Data,
         dapps_staking_developer_address: Option<AccountId>,
-        lucky_oracle_address: Option<AccountId>,
         random_generator_address: Option<AccountId>,
         reward_manager_address: Option<AccountId>,
     }
@@ -87,6 +92,7 @@ pub mod rafle_contract {
         }
     }
 
+    impl ParticipantManager for Contract{}
     impl Raffle for Contract{}
     impl AccessControl for Contract{}
 
@@ -94,7 +100,6 @@ pub mod rafle_contract {
         #[ink(constructor)]
         pub fn new(
             dapps_staking_developer_address: AccountId,
-            lucky_oracle_address: AccountId,
             random_generator_address: AccountId,
             reward_manager_address: AccountId,
         ) -> Self {
@@ -102,8 +107,8 @@ pub mod rafle_contract {
             let caller = instance.env().caller();
             instance._init_with_admin(caller);
             instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
+            instance.grant_role(PARTICIPANT_MANAGER, caller).expect("Should grant the role PARTICIPANT_MANAGER");
             instance.dapps_staking_developer_address = Some(dapps_staking_developer_address);
-            instance.lucky_oracle_address = Some(lucky_oracle_address);
             instance.random_generator_address = Some(random_generator_address);
             instance.reward_manager_address = Some(reward_manager_address);
             instance
@@ -133,17 +138,12 @@ pub mod rafle_contract {
 
         #[ink(message)]
         #[modifiers(only_role(RAFFLE_MANAGER))]
-        pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
+        pub fn run_raffle(&mut self, era: u32, rewards: Balance) -> Result<(), ContractError> {
 
-            // get the oracle data
-            let lucky_oracle_address = self.lucky_oracle_address.ok_or(ContractError::LuckyOracleAddressMissing)?;
-            let oracle_data = OracleDataConsumerRef::get_data(&lucky_oracle_address, era);
 
-            let participants = oracle_data.participants;
-            let rewards = oracle_data.rewards;
-
-            // select the participants
-            let winners = self._run_raffle(era, participants, rewards)?;
+            // select the winners
+            // initialize the empty list of randomly selected values
+            let winners = self._run_raffle(era, rewards)?;
             let nb_winners = winners.len();
 
             // withdraw the rewards from developer dAppsStaking
@@ -173,11 +173,16 @@ pub mod rafle_contract {
                 .invoke();
                 //.map_err(|_| ContractError::CrossContractCallError2)?;
 
+            // TODO split rewards given and total rewards
+            let total_value = self.get_total_value();
+
             // emit event RaffleDone
             self.env().emit_event(RaffleDone {
                 contract: self.env().caller(),
                 era,
-                nb_winners: nb_winners as u8,
+                nb_winners: nb_winners as u16,
+                nb_participants: self.get_nb_participants(),
+                total_value,
                 pending_rewards: rewards,
             });
 
@@ -190,6 +195,11 @@ pub mod rafle_contract {
         }
 
         #[ink(message)]
+        pub fn get_role_participant_manager(&self) -> RoleType {
+            PARTICIPANT_MANAGER
+        }
+
+        #[ink(message)]
         #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
         pub fn set_dapps_staking_developer_address(&mut self, address: AccountId) -> Result<(), ContractError> {
             self.dapps_staking_developer_address = Some(address);
@@ -199,18 +209,6 @@ pub mod rafle_contract {
         #[ink(message)]
         pub fn get_dapps_staking_developer_address(&mut self) -> Option<AccountId> {
             self.dapps_staking_developer_address
-        }
-
-        #[ink(message)]
-        #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
-        pub fn set_lucky_oracle_address(&mut self, address: AccountId) -> Result<(), ContractError> {
-            self.lucky_oracle_address = Some(address);
-            Ok(())
-        }
-
-        #[ink(message)]
-        pub fn get_lucky_oracle_address(&mut self) -> Option<AccountId> {
-            self.lucky_oracle_address
         }
 
         #[ink(message)]

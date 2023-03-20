@@ -1,8 +1,7 @@
 use ink::prelude::vec::Vec;
 use openbrush::contracts::access_control::AccessControlError;
 use openbrush::traits::{AccountId, Balance};
-
-use crate::helpers::helper::HelperError;
+use crate::traits::random::RandomError;
 
 #[openbrush::trait_definition]
 pub trait Raffle {
@@ -25,9 +24,8 @@ pub trait Raffle {
     fn get_last_era_done(&self) -> u32;
 
     fn _run_raffle(
-        &mut self, 
+        &mut self,
         era: u32,
-        participants: Vec<(AccountId, Balance)>,
         total_rewards: Balance
     ) -> Result<Vec<(AccountId, Balance)>, RaffleError>;
 
@@ -41,11 +39,11 @@ pub enum RaffleError {
     NoRatioSet,
     IncorrectRatio,
     NoParticipant,
-    TooManyWinners,
+    NoSelectedParticipant,
     DivByZero,
     MulOverFlow,
     AddOverFlow,
-    HelperError(HelperError),
+    RandomError(RandomError),
     AccessControlError(AccessControlError),
 }
 
@@ -56,10 +54,10 @@ impl From<AccessControlError> for RaffleError {
     }
 }
 
-/// convertor from HelperError to RaffleError
-impl From<HelperError> for RaffleError {
-    fn from(error: HelperError) -> Self {
-        RaffleError::HelperError(error)
+/// convertor from RandomError to RaffleError
+impl From<RandomError> for RaffleError {
+    fn from(error: RandomError) -> Self {
+        RaffleError::RandomError(error)
     }
 }
 

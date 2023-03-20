@@ -6,7 +6,7 @@
 pub mod raffle {
     use lucky::impls::{
         *,
-        oracle::*,
+        participant_manager::*,
         reward::psp22_reward,
         reward::psp22_reward::*,
         raffle::*,
@@ -20,17 +20,18 @@ pub mod raffle {
     #[derive(Default, Storage)]
     pub struct Contract {
         #[storage_field]
-        random_generator: random_generator::Data,
-        #[storage_field]
-        oracle_data: oracle::Data,
-        #[storage_field]
-        reward: psp22_reward::Data,
+        participant_manager: participant_manager::Data,
         #[storage_field]
         raffle: raffle::Data,
+        #[storage_field]
+        random_generator: random_generator::Data,
+        #[storage_field]
+        reward: psp22_reward::Data,
         #[storage_field]
         access: access_control::Data,
     }
 
+    impl ParticipantManager for Contract{}
     impl Raffle for Contract{}
     impl AccessControl for Contract{}
 
@@ -46,13 +47,9 @@ pub mod raffle {
         #[ink(constructor)]
         pub fn new() -> Self {
             let mut instance = Self::default();
-            instance.oracle_data = oracle::Data::default();
-            instance.random_generator = random_generator::Data::default();
-            instance.reward = psp22_reward::Data::default();
-            instance.raffle = raffle::Data::default();
             let caller = instance.env().caller();
             instance._init_with_admin(caller);
-            instance.grant_role(ORACLE_DATA_MANAGER, caller).expect("Should grant the role ORACLE_DATA_MANAGER");
+            instance.grant_role(PARTICIPANT_MANAGER, caller).expect("Should grant the role PARTICIPANT_MANAGER");
             instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
             instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
             instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
@@ -61,16 +58,10 @@ pub mod raffle {
         }
 
         #[ink(message)]
-        pub fn run_raffle(&mut self, era: u32) -> Result<(), ContractError> {
+        pub fn run_raffle(&mut self, era: u32, rewards: Balance) -> Result<(), ContractError> {
 
-            // get the oracle data
-            let oracle_data = self.get_data(era);
-
-            let participants = oracle_data.participants;
-            let rewards = oracle_data.rewards;
-
-            // select the participants
-            let winners = self._run_raffle(era, participants, rewards)?;
+            // select the winners
+            let winners = self._run_raffle(era, rewards)?;
 
             // transfer the rewards and the winners
             ink::env::pay_with_call!(self.fund_rewards_and_add_winners(era, winners), rewards)?;
@@ -158,8 +149,9 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
+            contract.add_participants(participants).unwrap();
 
-            let result = contract._run_raffle(1, participants, 1000);
+            let result = contract._run_raffle(1, 1000);
             match result {
                 Err(NoRatioSet) => debug_println!("NoRatioSet as expected"),
                 _ => panic!("Error 1"),
@@ -173,8 +165,9 @@ pub mod raffle {
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
             let participants = vec![];
+            contract.add_participants(participants).unwrap();
 
-            let result = contract._run_raffle(1, participants, 1000);
+            let result = contract._run_raffle(1, 1000);
             match result {
                 Err(NoParticipant) => debug_println!("NoParticipant as expected"),
                 _ => panic!("Error 1"),
@@ -193,8 +186,9 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
+            contract.add_participants(participants).unwrap();
 
-            let result = contract._run_raffle(1, participants, 0);
+            let result = contract._run_raffle(1, 0);
             match result {
                 Err(RaffleError::NoReward) => debug_println!("NoParticipant as expected"),
                 _ => panic!("Error 1"),
@@ -210,12 +204,13 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
+            contract.add_participants(participants).unwrap();
 
             // second winner receive nada
             contract.set_ratio_distribution(vec![50, 0, 50], 100).unwrap();
 
             // select the participants
-            let winners = contract._run_raffle(1, participants, 1000).unwrap();
+            let winners = contract._run_raffle(1, 1000).unwrap();
 
             // assert two differents winners
             assert_eq!(winners.len(), 2); 
@@ -241,27 +236,27 @@ pub mod raffle {
 
             // first raffle => success
             let participants = vec![(accounts.alice, 100000)];
-            contract._run_raffle(2, participants, rewards).unwrap();
+            contract.add_participants(participants).unwrap();
+            contract._run_raffle(2, rewards).unwrap();
 
             // second raffle for the same era => failure
             let participants = vec![(accounts.alice, 100000)];
-            let result = contract._run_raffle(2, participants, rewards);
+            contract.add_participants(participants).unwrap();
+            let result = contract._run_raffle(2, rewards);
             match result {
                 Err(RaffleError::RaffleAlreadyDone) => debug_println!("RaffleAlreadyDone as expected"),
                 _ => panic!("Error 1"),
             };
 
             // second raffle for previous era => failure
-            let participants = vec![(accounts.alice, 100000)];
-            let result = contract._run_raffle(1, participants, rewards);
+            let result = contract._run_raffle(1,  rewards);
             match result {
                 Err(RaffleError::RaffleAlreadyDone) => debug_println!("RaffleAlreadyDone as expected"),
                 _ => panic!("Error 2"),
             };
 
             // raffle for next era => success
-            let participants = vec![(accounts.alice, 100000)];
-            contract._run_raffle(3, participants, rewards).unwrap();
+            contract._run_raffle(3, rewards).unwrap();
 
         }
 
@@ -277,17 +272,18 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
+            contract.add_participants(participants).unwrap();
 
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
             // select the participants
-            let winners = contract._run_raffle(1, participants, rewards).unwrap();
+            let winners = contract._run_raffle(1, rewards).unwrap();
 
-            // assert three differents winners
+            // assert three different winners
             assert_eq!(winners.len(), 3); 
-            assert!(winners[0] != winners[1]); 
-            assert!(winners[0] != winners[2]); 
-            assert!(winners[1] != winners[2]); 
+            assert_ne!(winners[0], winners[1]);
+            assert_ne!(winners[0], winners[2]);
+            assert_ne!(winners[1], winners[2]);
 
             let mut total_rewards = 0;
             for (_, r) in  winners {
@@ -307,17 +303,18 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
+            contract.add_participants(participants).unwrap();
 
             contract.set_ratio_distribution(vec![50, 30, 20], 200).unwrap();
 
             // select the participants
-            let winners = contract._run_raffle(1, participants, 1000).unwrap();
+            let winners = contract._run_raffle(1, 1000).unwrap();
 
-            // assert three differents winners
-            assert_eq!(winners.len(), 3); 
-            assert!(winners[0] != winners[1]); 
-            assert!(winners[0] != winners[2]); 
-            assert!(winners[1] != winners[2]); 
+            // assert three different winners
+            assert_eq!(winners.len(), 3);
+            assert_ne!(winners[0], winners[1]);
+            assert_ne!(winners[0], winners[2]);
+            assert_ne!(winners[1], winners[2]);
 
             let mut total_rewards = 0;
             for (_, r) in  winners {
@@ -338,14 +335,11 @@ pub mod raffle {
             let accounts = accounts();
 
             contract.add_participants(
-                era, 
                 vec![(accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)]
             ).unwrap();
 
-            contract.set_rewards(era, 1000).unwrap();
-
-            contract.run_raffle(era).unwrap();
+            contract.run_raffle(era, 1000).unwrap();
 
             let mut nb_winners = 0;
             let mut total_rewards = 0;
