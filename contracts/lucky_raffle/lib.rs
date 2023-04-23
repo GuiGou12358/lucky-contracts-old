@@ -4,16 +4,15 @@
 #[openbrush::contract]
 pub mod raffle_contract {
     use ink::env::call::{ExecutionInput, Selector};
-    use openbrush::{modifiers, traits::Storage};
+    use ink::prelude::vec::Vec;
+    use openbrush::{modifiers, traits::{Storage}};
     use openbrush::contracts::access_control::{*, AccessControlError, DEFAULT_ADMIN_ROLE};
 
     use lucky::impls::{
-        raffle,
-        raffle::*,
-        participant_manager,
-        participant_manager::*,
+        raffle, raffle::*,
+        participant_manager, participant_manager::*,
+        participant_filter::filter_latest_winners, participant_filter::filter_latest_winners::*
     };
-    use lucky::impls::reward::psp22_reward::REWARD_MANAGER;
     use lucky::traits::random_generator::{RandomGeneratorRef};
 
     // Selector of withdraw: "0x410fcc9d"
@@ -51,6 +50,7 @@ pub mod raffle_contract {
         RandomGeneratorAddressMissing,
         DappsStakingDeveloperAddressMissing,
         RewardManagerAddressMissing,
+        ParticipantManagerError(ParticipantManagerError),
     }
 
     /// convertor from AccessControlError to ContractError
@@ -64,6 +64,13 @@ pub mod raffle_contract {
     impl From<RaffleError> for ContractError {
         fn from(error: RaffleError) -> Self {
             ContractError::RaffleError(error)
+        }
+    }
+
+    /// convertor from RaffleError to ContractError
+    impl From<ParticipantManagerError> for ContractError {
+        fn from(error: ParticipantManagerError) -> Self {
+            ContractError::ParticipantManagerError(error)
         }
     }
 
@@ -81,6 +88,8 @@ pub mod raffle_contract {
         dapps_staking_developer_address: Option<AccountId>,
         random_generator_address: Option<AccountId>,
         reward_manager_address: Option<AccountId>,
+        #[storage_field]
+        filter_latest_winners: filter_latest_winners::Data,
     }
 
     impl Random for Contract {
@@ -94,6 +103,7 @@ pub mod raffle_contract {
 
     impl ParticipantManager for Contract{}
     impl Raffle for Contract{}
+    impl FilterLatestWinners for Contract{}
     impl AccessControl for Contract{}
 
     impl Contract {
@@ -108,33 +118,36 @@ pub mod raffle_contract {
             instance._init_with_admin(caller);
             instance.grant_role(RAFFLE_MANAGER, caller).expect("Should grant the role RAFFLE_MANAGER");
             instance.grant_role(PARTICIPANT_MANAGER, caller).expect("Should grant the role PARTICIPANT_MANAGER");
+            instance.grant_role(PARTICIPANT_FILTER_MANAGER, caller).expect("Should grant the role PARTICIPANT_FILTER_MANAGER");
             instance.dapps_staking_developer_address = Some(dapps_staking_developer_address);
             instance.random_generator_address = Some(random_generator_address);
             instance.reward_manager_address = Some(reward_manager_address);
             instance
         }
 
-/*
+        /// add participants in the raffle and applied the filters
+        /// a participant with a weight higher than another participant will have normally more chance to be selected in the raffle
+        /// weight can represent the number of raffle tickets for this participant.
+        /// weight can also represent the amount staked in dAppStaking, ...
         #[ink(message)]
-        #[modifiers(only_role(RAFFLE_MANAGER))]
-        pub fn call_2(&mut self, rewards: Balance) -> Result<(), ContractError> {
+        pub fn add_participants_with_filters(&mut self, participants: Vec<(AccountId, Balance)>) -> Result<(), ContractError>{
 
-            // withdraw the rewards from developer dAppsStaking
-            let dapps_staking_developer_address = self.dapps_staking_developer_address.ok_or(ContractError::DappsStakingDeveloperAddressMissing)?;
-            let r = ink::env::call::build_call::<Environment>()
-                .call(dapps_staking_developer_address)
-                .exec_input(
-                    ExecutionInput::new(Selector::new(WITHDRAW_SELECTOR))
-                        .push_arg(rewards)
-                )
-                .returns::<()>()
-                .invoke();
-                //.try_invoke()
-                //.map_err(|_| ContractError::CrossContractCallError2a)?
-                //.map_err(|_| ContractError::CrossContractCallError2b)?;
-            Ok(r)
-        }      
-*/
+            let mut parts = participants.clone();
+
+            let mut i = 0;
+            while i < parts.len() {
+                let p_account_id = parts.get(i).unwrap().0;
+                if self._is_in_last_winners(&p_account_id) {
+                    parts.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+
+            self.add_participants(parts)?;
+            Ok(())
+        }
+
 
         #[ink(message)]
         #[modifiers(only_role(RAFFLE_MANAGER))]
@@ -145,6 +158,11 @@ pub mod raffle_contract {
             // initialize the empty list of randomly selected values
             let winners = self._run_raffle(era, rewards)?;
             let nb_winners = winners.len();
+
+            // save the winners
+            for winner in &winners {
+                self._add_winner(winner.0);
+            }
 
             // withdraw the rewards from developer dAppsStaking
             let dapps_staking_developer_address = self.dapps_staking_developer_address.ok_or(ContractError::DappsStakingDeveloperAddressMissing)?;
@@ -197,6 +215,11 @@ pub mod raffle_contract {
         #[ink(message)]
         pub fn get_role_participant_manager(&self) -> RoleType {
             PARTICIPANT_MANAGER
+        }
+
+        #[ink(message)]
+        pub fn get_role_participant_filter_manager(&self) -> RoleType {
+            PARTICIPANT_FILTER_MANAGER
         }
 
         #[ink(message)]

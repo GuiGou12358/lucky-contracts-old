@@ -39,6 +39,7 @@ pub mod participant_manager {
     mod tests {
         use openbrush::test_utils::accounts;
         use ink::env::debug_println;
+        use crate::participant_manager::MAX_PART;
 
         use super::*;
 
@@ -124,7 +125,7 @@ pub mod participant_manager {
             }
             //assert_eq!(contract.get_nb_participants(), 1200);
 
-            for i in 0..1 {
+            for _i in 0..1 {
                 //assert_eq!(contract.get_participant(0 * i).unwrap(), account_1);
                 assert_eq!(contract.get_participant(50).unwrap(), account_1);
                 //assert_eq!(contract.get_participant(100 * i).unwrap(), account_1);
@@ -146,16 +147,18 @@ pub mod participant_manager {
             let mut contract = Contract::new();
 
             let accounts = accounts();
-            for _i in 0..400 {
+            let nb_iter = MAX_PART / 4;
+            for _i in 0..nb_iter {
                 contract.add_participants(
                     vec![
                         (accounts.alice, 100),
                         (accounts.bob, 200),
                         (accounts.charlie, 200),
+                        (accounts.django, 300),
                     ]
                 ).unwrap();
             }
-            assert_eq!(contract.get_nb_participants(), 1200);
+            assert_eq!(contract.get_nb_participants() as usize, MAX_PART);
 
             match contract.add_participants(vec![(accounts.alice, 100)]) {
                 Err(ParticipantManagerError::MaxSizeExceeded) => debug_println!("Max size exceeded"),
@@ -169,16 +172,18 @@ pub mod participant_manager {
 
             let accounts = accounts();
 
-            for _i in 0..400 {
+            let nb_iter = MAX_PART / 4;
+            for _i in 0..nb_iter {
                 contract.add_participants(
                     vec![
                         (accounts.alice, 100),
                         (accounts.bob, 200),
                         (accounts.charlie, 200),
+                        (accounts.django, 300),
                     ]
                 ).unwrap();
             }
-            assert_eq!(contract.get_nb_participants(), 1200);
+            assert_eq!(contract.get_nb_participants() as usize, MAX_PART);
             assert_ne!(contract.get_total_value(), 0);
 
             contract.clear_data().unwrap();

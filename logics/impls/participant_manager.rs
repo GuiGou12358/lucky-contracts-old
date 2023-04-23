@@ -9,14 +9,15 @@ pub use crate::traits::participant_manager::*;
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
 pub const PARTICIPANT_MANAGER: RoleType = ink::selector_id!("PARTICIPANT_MANAGER");
-const MAX_PART_BY_VEC: usize = 300;
+pub const MAX_PART_BY_VEC: usize = 300;
+pub const MAX_PART: usize = MAX_PART_BY_VEC * 6;
 
 #[derive(Default, Debug)]
 #[openbrush::upgradeable_storage(STORAGE_KEY)]
 pub struct Data {
     nb_participants: u16,
     /// participants
-    /// to not reach max capacity size, we will split the participants in many vectors (max 200 participants by vector)
+    /// to not reach max capacity size, we will split the participants in many vectors (max 300 participants by vector)
     participants_1: Lazy<Vec<Participant>>,
     total_value_1: Balance,
     participants_2: Lazy<Vec<Participant>>,
@@ -64,8 +65,6 @@ fn select_winner_matching_value(
     }
     None
 }
-
-
 
 
 impl<T> ParticipantManager for T

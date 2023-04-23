@@ -7,6 +7,7 @@ pub mod raffle {
     use lucky::impls::{
         *,
         participant_manager::*,
+        participant_filter::filter_latest_winners::*,
         reward::psp22_reward,
         reward::psp22_reward::*,
         raffle::*,
@@ -15,6 +16,7 @@ pub mod raffle {
     };
     use openbrush::contracts::access_control::{*, access_control};
     use openbrush::traits::Storage;
+    use lucky::impls::participant_filter::filter_latest_winners;
 
     #[ink(storage)]
     #[derive(Default, Storage)]
@@ -29,10 +31,13 @@ pub mod raffle {
         reward: psp22_reward::Data,
         #[storage_field]
         access: access_control::Data,
+        #[storage_field]
+        filter_latest_winners: filter_latest_winners::Data,
     }
 
     impl ParticipantManager for Contract{}
     impl Raffle for Contract{}
+    impl FilterLatestWinners for Contract{}
     impl AccessControl for Contract{}
 
 
@@ -54,7 +59,27 @@ pub mod raffle {
             instance.grant_role(REWARD_MANAGER, caller).expect("Should grant the role REWARD_MANAGER");
             instance.grant_role(REWARD_VIEWER, caller).expect("Should grant the role REWARD_VIEWER");
             instance.grant_role(RANDOM_GENERATOR_CONSUMER, caller).expect("Should grant the role RANDOM_GENERATOR_CONSUMER");
+            instance.grant_role(PARTICIPANT_FILTER_MANAGER, caller).expect("Should grant the role PARTICIPANT_FILTER_MANAGER");
             instance
+        }
+
+        #[ink(message)]
+        pub fn add_participants_with_filters(&mut self, participants: Vec<(AccountId, Balance)>) -> Result<(), ContractError>{
+
+            let mut parts = participants.clone();
+
+            let mut i = 0;
+            while i < parts.len() {
+                let p_account_id = parts.get(i).unwrap().0;
+                if self._is_in_last_winners(&p_account_id) {
+                    parts.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+
+            self.add_participants(parts)?;
+            Ok(())
         }
 
         #[ink(message)]
@@ -62,6 +87,12 @@ pub mod raffle {
 
             // select the winners
             let winners = self._run_raffle(era, rewards)?;
+
+
+            // save the winners
+            for winner in &winners {
+                self._add_winner(winner.0);
+            }
 
             // transfer the rewards and the winners
             ink::env::pay_with_call!(self.fund_rewards_and_add_winners(era, winners), rewards)?;
@@ -75,7 +106,8 @@ pub mod raffle {
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum ContractError {
         RaffleError(RaffleError),
-        RewardError(RewardError)
+        RewardError(RewardError),
+        ParticipantManagerError(ParticipantManagerError),
     }
 
 
@@ -91,8 +123,14 @@ pub mod raffle {
         fn from(error: RewardError) -> Self {
             ContractError::RewardError(error)
         }
-    }    
-    
+    }
+
+    /// convertor from RaffleError to ContractError
+    impl From<ParticipantManagerError> for ContractError {
+        fn from(error: ParticipantManagerError) -> Self {
+            ContractError::ParticipantManagerError(error)
+        }
+    }
 
 
     impl psp22_reward::Internal for Contract {
@@ -149,7 +187,7 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
 
             let result = contract._run_raffle(1, 1000);
             match result {
@@ -165,7 +203,7 @@ pub mod raffle {
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
             let participants = vec![];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
 
             let result = contract._run_raffle(1, 1000);
             match result {
@@ -186,7 +224,7 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
 
             let result = contract._run_raffle(1, 0);
             match result {
@@ -204,7 +242,7 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
 
             // second winner receive nada
             contract.set_ratio_distribution(vec![50, 0, 50], 100).unwrap();
@@ -236,12 +274,12 @@ pub mod raffle {
 
             // first raffle => success
             let participants = vec![(accounts.alice, 100000)];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
             contract._run_raffle(2, rewards).unwrap();
 
             // second raffle for the same era => failure
             let participants = vec![(accounts.alice, 100000)];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
             let result = contract._run_raffle(2, rewards);
             match result {
                 Err(RaffleError::RaffleAlreadyDone) => debug_println!("RaffleAlreadyDone as expected"),
@@ -272,7 +310,7 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
 
             contract.set_ratio_distribution(vec![50, 30, 20], 100).unwrap();
 
@@ -303,7 +341,7 @@ pub mod raffle {
                 (accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)
                 ];
-            contract.add_participants(participants).unwrap();
+            contract.add_participants_with_filters(participants).unwrap();
 
             contract.set_ratio_distribution(vec![50, 30, 20], 200).unwrap();
 
@@ -334,7 +372,7 @@ pub mod raffle {
             let era = 1;
             let accounts = accounts();
 
-            contract.add_participants(
+            contract.add_participants_with_filters(
                 vec![(accounts.alice, 100000), (accounts.bob, 100000), (accounts.charlie, 100000), 
                 (accounts.django, 100000), (accounts.eve, 100000), (accounts.frank, 100000)]
             ).unwrap();
@@ -372,6 +410,85 @@ pub mod raffle {
             // assert three differents winners
             assert_eq!(total_rewards, 1000); 
 
+        }
+
+
+        #[ink::test]
+        fn test_add_participants_with_filters()  {
+
+            let mut contract = super::Contract::new();
+            contract.set_ratio_distribution(vec![50], 100).unwrap();
+            contract.set_nb_winners_filtered(2).unwrap();
+
+            let accounts = accounts();
+
+            contract.add_participants_with_filters(
+                vec![(accounts.alice, 100000)]
+            ).unwrap();
+
+            contract.run_raffle(1, 1000).unwrap();
+
+            match get_reward(&mut contract, accounts.alice) {
+                Some(r) => assert_eq!(500, r),
+                _ => panic!("alice should have rewards"),
+            };
+
+            // alice claims the rewards
+            contract._claim_from(accounts.alice).unwrap();
+
+            match get_reward(&mut contract, accounts.alice) {
+                Some(_) => panic!("alice should not have reward anymore"),
+                _ => debug_println!("It's ok, alice has no reward"),
+            };
+
+            // second era with only Alice
+            // Alice already won so it should be removed from the participants
+            contract.clear_data().unwrap();
+
+            contract.add_participants_with_filters(
+                vec![(accounts.alice, 100000)]
+            ).unwrap();
+
+            let result = contract._run_raffle(2, 1000);
+            match result {
+                Err(RaffleError::NoParticipant) => debug_println!("NoParticipant as expected"),
+                _ => panic!("NoParticipant is expected"),
+            };
+
+            // third era with Alice and Bob
+            // Alice already won so Bob must win
+            contract.add_participants_with_filters(
+                vec![(accounts.alice, 100000), (accounts.bob, 1)]
+            ).unwrap();
+
+            contract.run_raffle(3, 1000).unwrap();
+
+            match get_reward(&mut contract, accounts.bob) {
+                Some(r) => assert_eq!(500, r),
+                _ => panic!("Bob should have rewards"),
+            };
+
+            // Bob claims the rewards
+            contract._claim_from(accounts.bob).unwrap();
+
+            match get_reward(&mut contract, accounts.bob) {
+                Some(_) => panic!("Bob should not have reward anymore"),
+                _ => debug_println!("It's ok, Bob has no reward"),
+            };
+
+            // 4th era with Alice and Bob
+            // Both already won so it should be removed from the participants
+            contract.clear_data().unwrap();
+
+            contract.add_participants_with_filters(
+                vec![(accounts.alice, 100000), (accounts.bob, 1)]
+            ).unwrap();
+
+            let result = contract._run_raffle(4, 1000);
+            match result {
+                Err(RaffleError::NoParticipant) => debug_println!("NoParticipant as expected"),
+                _ => panic!("NoParticipant is expected"),
+            };
         }
 
         pub fn get_reward(contract: &mut super::Contract, account: AccountId) -> Option<u128> {
