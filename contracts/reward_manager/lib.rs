@@ -22,6 +22,9 @@ pub mod reward_manager {
         reward::psp22_reward::*,
     };
 
+
+    const WHITELISTED_ADDRESS: RoleType = ink::selector_id!("WHITELISTED_ADDRESS");
+
     /// Event emitted when a reward is pending
     #[ink(event)]
     pub struct PendingReward {
@@ -48,6 +51,7 @@ pub mod reward_manager {
         RewardError(RewardError),
         AccessControlError(AccessControlError),
         UpgradeError,
+        TransferError,
     }
 
     /// convertor from RewardError to ContractError
@@ -105,6 +109,14 @@ pub mod reward_manager {
         #[ink(message)]
         pub fn get_role_reward_viewer(&self) -> RoleType {
             REWARD_VIEWER
+        }
+
+        #[ink(message)]
+        #[openbrush::modifiers(only_role(WHITELISTED_ADDRESS))]
+        pub fn withdraw(&mut self, value: Balance) -> Result<(), ContractError>{
+            let caller = Self::env().caller();
+            Self::env().transfer(caller, value).map_err(|_| ContractError::TransferError)?;
+            Ok(())
         }
 
     }
