@@ -1,6 +1,6 @@
 [package]
 name = "reward_manager"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["guigou"]
 edition = "2021"
 
